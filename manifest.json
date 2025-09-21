@@ -1,0 +1,23 @@
+{
+  "short_name": "Doncaster Crime",
+  "name": "Doncaster Crime Map",
+  "description": "An advanced, real-time crime mapping and analysis tool for Doncaster, featuring AI-powered insights, predictive hotspots, and detailed incident data visualization.",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#0D1117",
+  "background_color": "#161B22"
+}

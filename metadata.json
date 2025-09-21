@@ -1,0 +1,6 @@
+{
+  "name": "Doncaster Crime Map",
+  "description": "An advanced, real-time crime mapping and analysis tool for Doncaster, featuring AI-powered insights, predictive hotspots, and detailed incident data visualization.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
