@@ -1,4 +1,5 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+dotenv.config();
 import express from 'express';
 import cors from 'cors';
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -6,7 +7,7 @@ import fs from 'fs';
 import path from 'path';
 
 const app = express();
-const port = 80;
+const port = 3001;
 
 const logStream = fs.createWriteStream(path.join('server.log'), { flags: 'a' });
 

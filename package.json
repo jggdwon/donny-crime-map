@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "start:server": "node -r dotenv/config server.mjs"
+    "start:server": "node server.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.8.0",
