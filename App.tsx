@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useReducer } from 'react';
 import { Crime, StopSearch, CrimeCategory, Insight, PredictiveHotspot, ModalState, SortConfig } from './types';
 import * as policeApi from './services/policeApi';
 import * as geminiService from './services/geminiService';
@@ -24,6 +24,32 @@ const MilitaryButton: React.FC<{ onClick?: () => void; children: React.ReactNode
     </button>
 );
 
+type ModalAction =
+    | { type: 'OPEN_MODAL'; payload: { modal: keyof ModalState; content?: React.ReactNode } }
+    | { type: 'CLOSE_MODAL' }
+    | { type: 'SET_LOADING'; payload: boolean }
+    | { type: 'SET_CONTENT'; payload: React.ReactNode };
+
+const initialModalState: { modal: ModalState; content: React.ReactNode; isLoading: boolean } = {
+    modal: { briefing: false, trend: false, insights: false, predictive: false },
+    content: '',
+    isLoading: false,
+};
+
+function modalReducer(state: typeof initialModalState, action: ModalAction) {
+    switch (action.type) {
+        case 'OPEN_MODAL':
+            return { ...state, modal: { ...initialModalState.modal, [action.payload.modal]: true }, isLoading: true, content: action.payload.content || '' };
+        case 'CLOSE_MODAL':
+            return { ...state, modal: initialModalState.modal };
+        case 'SET_LOADING':
+            return { ...state, isLoading: action.payload };
+        case 'SET_CONTENT':
+            return { ...state, content: action.payload, isLoading: false };
+        default: return state;
+    }
+}
+
 const App: React.FC = () => {
     const [allCrimes, setAllCrimes] = useState<Crime[]>([]);
     const [filteredCrimes, setFilteredCrimes] = useState<Crime[]>([]);
@@ -45,23 +71,26 @@ const App: React.FC = () => {
     const [insights, setInsights] = useState<Insight[]>([]);
     const [predictiveHotspots, setPredictiveHotspots] = useState<PredictiveHotspot[]>([]);
     
-    const [modalState, setModalState] = useState<ModalState>({ briefing: false, trend: false, insights: false, predictive: false });
-    const [modalContent, setModalContent] = useState<string | React.ReactNode>('');
-    const [isModalLoading, setIsModalLoading] = useState(false);
+    const [modal, dispatchModal] = useReducer(modalReducer, initialModalState);
     
     const [crimeSortConfig, setCrimeSortConfig] = useState<SortConfig>({ key: 'month', direction: 'desc' });
     const [stopSearchSortConfig, setStopSearchSortConfig] = useState<SortConfig>({ key: 'datetime', direction: 'desc' });
 
-    const handleItemSelection = (type: 'crime' | 'stopSearch', item: Crime | StopSearch) => {
-        if (type === 'crime') {
+    const handleItemSelection = useCallback((type: 'crime' | 'stopSearch' | null, item?: Crime | StopSearch) => {
+        if (type === 'crime' && item) {
             setSelectedCrimeId((item as Crime).persistent_id || String((item as Crime).id));
             setSelectedStopSearch(null);
-        } else {
+        } else if (type === 'stopSearch' && item) {
             setSelectedStopSearch(item as StopSearch);
             setSelectedCrimeId(null);
+        } else { // This handles the null case for deselection
+            setSelectedCrimeId(null);
+            setSelectedStopSearch(null);
         }
-        document.getElementById('map-wrapper')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
+        if (item) {
+            document.getElementById('map-wrapper')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, []);
 
     const fetchData = useCallback(async () => {
         setIsLoading(true);
@@ -102,63 +131,52 @@ const App: React.FC = () => {
         setFilteredCrimes(newFilteredCrimes);
     }, [allCrimes, selectedCategory]);
 
-    const handleSummarizeTrends = async () => {
-        setModalState({ ...modalState, trend: true });
-        setIsModalLoading(true);
+    const handleAIFeature = useCallback(async (
+        modalKey: keyof ModalState,
+        apiCall: () => Promise<any>,
+        onSuccess: (data: any) => React.ReactNode
+    ) => {
+        dispatchModal({ type: 'OPEN_MODAL', payload: { modal: modalKey } });
         try {
-            const summary = await geminiService.summarizeCrimeTrends(filteredCrimes);
-            setModalContent(<div dangerouslySetInnerHTML={{ __html: summary.replace(/\n/g, '<br/>') }} />);
+            const result = await apiCall();
+            dispatchModal({ type: 'SET_CONTENT', payload: onSuccess(result) });
         } catch (e) {
-            const message = e instanceof Error ? e.message : 'Failed to generate trend summary.';
-            setModalContent(message);
-        } finally {
-            setIsModalLoading(false);
+            const message = e instanceof Error ? e.message : 'An unknown error occurred.';
+            dispatchModal({ type: 'SET_CONTENT', payload: <div className="text-red-400">{message}</div> });
         }
-    };
+    }, []);
 
-    const handleGenerateInsights = useCallback(async () => {
-        setModalState(s => ({ ...s, insights: true }));
-        setIsModalLoading(true);
-        try {
-            const insightData = await geminiService.generateCrimeInsights(filteredCrimes);
+    const handleSummarizeTrends = () => handleAIFeature(
+        'trend',
+        () => geminiService.summarizeCrimeTrends(filteredCrimes),
+        (summary) => <div dangerouslySetInnerHTML={{ __html: summary.replace(/\n/g, '<br/>') }} />
+    );
+
+    const handleGenerateInsights = () => handleAIFeature(
+        'insights',
+        () => geminiService.generateCrimeInsights(filteredCrimes),
+        (insightData: Insight[]) => {
             setInsights(insightData);
             setInsightsVisible(true);
-            setModalContent(
-                insightData.length > 0 ?
-                <ul className="list-disc pl-5">
-                    {insightData.map((item, i) => <li key={i}><strong>{item.area}:</strong> {item.insight}</li>)}
-                </ul> : 'No insights could be generated from the current data.'
-            );
-        } catch(e) {
-            const message = e instanceof Error ? e.message : 'Failed to generate insights.';
-            setModalContent(message);
-        } finally {
-            setIsModalLoading(false);
+            return insightData.length > 0 ?
+                <ul className="list-disc pl-5">{insightData.map((item, i) => <li key={i}><strong>{item.area}:</strong> {item.insight}</li>)}</ul> :
+                'No insights could be generated from the current data.';
         }
-    }, [filteredCrimes]);
+    );
 
-    const handleGeneratePredictiveHotspots = useCallback(async () => {
-        setModalState(s => ({ ...s, predictive: true }));
-        setIsModalLoading(true);
-        try {
-            const hotspotData = await geminiService.generatePredictiveHotspots(allCrimes);
+    const handleGeneratePredictiveHotspots = () => handleAIFeature(
+        'predictive',
+        () => geminiService.generatePredictiveHotspots(allCrimes),
+        (hotspotData: PredictiveHotspot[]) => {
             setPredictiveHotspots(hotspotData);
             setPredictiveHotspotsVisible(true);
-             setModalContent(
-                hotspotData.length > 0 ?
-                <ul className="list-disc pl-5">
-                    {hotspotData.map((item, i) => <li key={i}><strong>{item.area} ({item.predictedCrimeType}):</strong> {item.reason}</li>)}
-                </ul> : 'No predictive hotspots could be generated.'
-            );
-        } catch(e) {
-            const message = e instanceof Error ? e.message : 'Failed to generate predictive hotspots.';
-            setModalContent(message);
-        } finally {
-            setIsModalLoading(false);
+            return hotspotData.length > 0 ?
+                <ul className="list-disc pl-5">{hotspotData.map((item, i) => <li key={i}><strong>{item.area} ({item.predictedCrimeType}):</strong> {item.reason}</li>)}</ul> :
+                'No predictive hotspots could be generated.';
         }
-    }, [allCrimes]);
+    );
     
-    const closeModal = () => setModalState({ briefing: false, trend: false, insights: false, predictive: false });
+    const closeModal = () => dispatchModal({ type: 'CLOSE_MODAL' });
 
     const sortedCrimes = useMemo(() => {
         return [...filteredCrimes].sort((a, b) => {
@@ -261,8 +279,8 @@ const App: React.FC = () => {
                 <MilitaryButton onClick={() => { setDensityHeatmapVisible(!isDensityHeatmapVisible); if(!isDensityHeatmapVisible) setRecencyHeatmapVisible(false); }} className={isDensityHeatmapVisible ? 'active-glow' : ''}>{isDensityHeatmapVisible ? 'Hide Density' : 'Show Density'}</MilitaryButton>
                 <MilitaryButton onClick={() => { setRecencyHeatmapVisible(!isRecencyHeatmapVisible); if(!isRecencyHeatmapVisible) setDensityHeatmapVisible(false); }} className={isRecencyHeatmapVisible ? 'active-glow' : ''}>{isRecencyHeatmapVisible ? 'Hide Recency' : 'Show Recency'}</MilitaryButton>
                 <MilitaryButton onClick={() => { insights.length > 0 ? setInsightsVisible(!isInsightsVisible) : handleGenerateInsights(); }} className={isInsightsVisible ? 'active-glow' : ''}>{isInsightsVisible ? 'Hide Insights' : 'Show Insights'}</MilitaryButton>
-                <MilitaryButton onClick={() => setMapEffectEnabled(!isMapEffectEnabled)} className={!isMapEffectEnabled ? 'active-glow' : ''}>{isMapEffectEnabled ? 'FX Off' : 'FX On'}</MilitaryButton>
-                <MilitaryButton onClick={() => { predictiveHotspots.length > 0 ? setPredictiveHotspotsVisible(!isPredictiveHotspotsVisible) : handleGeneratePredictiveHotspots(); }} className={`${isPredictiveHotspotsVisible ? 'active-glow' : ''} ${isModalLoading && modalState.predictive ? 'predictive-generating' : ''}`}>{isPredictiveHotspotsVisible ? 'Hide Hotspots' : '🔮 Predict'}</MilitaryButton>
+                <MilitaryButton onClick={() => setMapEffectEnabled(!isMapEffectEnabled)} className={isMapEffectEnabled ? '' : 'active-glow'}>{isMapEffectEnabled ? 'FX Off' : 'FX On'}</MilitaryButton>
+                <MilitaryButton onClick={() => { predictiveHotspots.length > 0 ? setPredictiveHotspotsVisible(!isPredictiveHotspotsVisible) : handleGeneratePredictiveHotspots(); }} className={`${isPredictiveHotspotsVisible ? 'active-glow' : ''} ${modal.isLoading && modal.modal.predictive ? 'predictive-generating' : ''}`}>{isPredictiveHotspotsVisible ? 'Hide Hotspots' : '🔮 Predict'}</MilitaryButton>
             </div>
 
             {/* Map */}
@@ -276,7 +294,7 @@ const App: React.FC = () => {
                     isInsightsVisible={isInsightsVisible}
                     isPredictiveHotspotsVisible={isPredictiveHotspotsVisible}
                     isMapEffectEnabled={isMapEffectEnabled}
-                    onCrimeSelect={setSelectedCrimeId}
+                    onCrimeSelect={handleItemSelection}
                     selectedCrimeId={selectedCrimeId}
                     selectedStopSearch={selectedStopSearch}
                     allCrimes={allCrimes}
@@ -285,14 +303,14 @@ const App: React.FC = () => {
             </div>
 
             {/* Modals */}
-            <Modal isOpen={modalState.trend} onClose={closeModal} title="Crime Trend Summary">
-                {isModalLoading ? <div className="loading-spinner"></div> : modalContent}
+            <Modal isOpen={modal.modal.trend} onClose={closeModal} title="Crime Trend Summary">
+                {modal.isLoading ? <div className="loading-spinner"></div> : modal.content}
             </Modal>
-            <Modal isOpen={modalState.insights} onClose={closeModal} title="Crime Insights & Analysis">
-                 {isModalLoading ? <div className="loading-spinner"></div> : modalContent}
+            <Modal isOpen={modal.modal.insights} onClose={closeModal} title="Crime Insights & Analysis">
+                 {modal.isLoading ? <div className="loading-spinner"></div> : modal.content}
             </Modal>
-            <Modal isOpen={modalState.predictive} onClose={closeModal} title="Predictive Crime Hotspots">
-                 {isModalLoading ? <div className="loading-spinner"></div> : modalContent}
+            <Modal isOpen={modal.modal.predictive} onClose={closeModal} title="Predictive Crime Hotspots">
+                 {modal.isLoading ? <div className="loading-spinner"></div> : modal.content}
             </Modal>
 
             {/* Crime List */}

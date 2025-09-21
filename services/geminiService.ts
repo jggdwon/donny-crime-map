@@ -49,6 +49,39 @@ const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
     return R * c;
 };
 
+const formatCategory = (category: string) => category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+const findNearbyEvents = (
+    lat: number,
+    lng: number,
+    month: string | moment.Moment,
+    allCrimes: Crime[],
+    allStopSearches: StopSearch[]
+) => {
+    const targetMoment = moment(month);
+    const oneMonthBefore = targetMoment.clone().subtract(1, 'month');
+    const oneMonthAfter = targetMoment.clone().add(1, 'month');
+    const proximityRadiusKm = 0.25;
+
+    const nearbyCrimes = allCrimes.filter(c => {
+        if (!c.location?.latitude || !c.location?.longitude) return false;
+        const cLat = parseFloat(c.location.latitude);
+        const cLng = parseFloat(c.location.longitude);
+        if(isNaN(cLat) || isNaN(cLng)) return false;
+        return haversineDistance(lat, lng, cLat, cLng) <= proximityRadiusKm && moment(c.month).isBetween(oneMonthBefore, oneMonthAfter, undefined, '[]');
+    });
+
+    const nearbyStopSearches = allStopSearches.filter(ss => {
+        if (!ss.location?.latitude || !ss.location?.longitude) return false;
+        const ssLat = parseFloat(ss.location.latitude);
+        const ssLng = parseFloat(ss.location.longitude);
+        if(isNaN(ssLat) || isNaN(ssLng)) return false;
+        return haversineDistance(lat, lng, ssLat, ssLng) <= proximityRadiusKm && moment(ss.datetime).isBetween(oneMonthBefore, oneMonthAfter, undefined, '[]');
+    });
+
+    return { nearbyCrimes, nearbyStopSearches, proximityRadiusKm };
+};
+
 export async function generateIncidentBriefing(
     crime: Crime, 
     allCrimes: Crime[], 
@@ -60,51 +93,33 @@ export async function generateIncidentBriefing(
 
     if(isNaN(crimeLat) || isNaN(crimeLng)) return "Briefing not available due to invalid location data.";
 
-    const targetMoment = moment(month, 'YYYY-MM');
-    const oneMonthBefore = targetMoment.clone().subtract(1, 'month');
-    const oneMonthAfter = targetMoment.clone().add(1, 'month');
-    const proximityRadiusKm = 0.25;
+    const { nearbyCrimes, nearbyStopSearches, proximityRadiusKm } = findNearbyEvents(crimeLat, crimeLng, month, allCrimes, allStopSearches);
 
-    const nearbyCrimes = allCrimes.filter(c => {
-        if (!c.location?.latitude || !c.location?.longitude) return false;
-        const cLat = parseFloat(c.location.latitude);
-        const cLng = parseFloat(c.location.longitude);
-        if(isNaN(cLat) || isNaN(cLng)) return false;
-        const crimeMoment = moment(c.month);
-        return haversineDistance(crimeLat, crimeLng, cLat, cLng) <= proximityRadiusKm &&
-               crimeMoment.isBetween(oneMonthBefore, oneMonthAfter, undefined, '[]');
-    }).map(c => ({
-        type: c.category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+    const formattedNearbyCrimes = nearbyCrimes.map(c => ({
+        type: formatCategory(c.category),
         date: moment(c.month).format('MMMM YYYY'),
         street: c.location?.street?.name ?? 'Unknown Street'
     }));
 
-    const nearbyStopSearches = allStopSearches.filter(ss => {
-        if (!ss.location?.latitude || !ss.location?.longitude) return false;
-        const ssLat = parseFloat(ss.location.latitude);
-        const ssLng = parseFloat(ss.location.longitude);
-        if(isNaN(ssLat) || isNaN(ssLng)) return false;
-        const ssMoment = moment(ss.datetime);
-        return haversineDistance(crimeLat, crimeLng, ssLat, ssLng) <= proximityRadiusKm &&
-               ssMoment.isBetween(oneMonthBefore, oneMonthAfter, undefined, '[]');
-    }).map(ss => ({
+    const formattedNearbyStopSearches = nearbyStopSearches.map(ss => ({
         type: ss.type || 'N/A',
         date: moment(ss.datetime).format('YYYY-MM-DD HH:mm'),
         objectOfSearch: ss.object_of_search || 'N/A',
         street: ss.location?.street?.name ?? 'Unknown Street'
     }));
 
+
     const prompt = `You are a highly experienced detective AI. Analyze a specific crime incident and provide a comprehensive incident briefing. Combine factual context, insightful deductions about what likely happened, and relevant proximity event data.
 
 **Main Incident Details:**
-- Crime Type: ${category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+- Crime Type: ${formatCategory(category)}
 - Date: ${moment(month).format('MMMM YYYY')}
 - Location: ${location.street.name}
-- Outcome: ${crime.outcome_status?.category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) ?? 'No specific outcome'}
+- Outcome: ${crime.outcome_status ? formatCategory(crime.outcome_status.category) : 'No specific outcome'}
 
 **Proximity Events (within ${proximityRadiusKm * 1000}m and +/- 1 month):**
-${nearbyCrimes.length > 0 ? `Nearby Crimes: ${JSON.stringify(nearbyCrimes.slice(0, 5), null, 2)}` : 'No significant nearby crime incidents.'}
-${nearbyStopSearches.length > 0 ? `Nearby Stop & Searches: ${JSON.stringify(nearbyStopSearches.slice(0, 5), null, 2)}` : 'No significant nearby stop and search incidents.'}
+${formattedNearbyCrimes.length > 0 ? `Nearby Crimes: ${JSON.stringify(formattedNearbyCrimes.slice(0, 5), null, 2)}` : 'No significant nearby crime incidents.'}
+${formattedNearbyStopSearches.length > 0 ? `Nearby Stop & Searches: ${JSON.stringify(formattedNearbyStopSearches.slice(0, 5), null, 2)}` : 'No significant nearby stop and search incidents.'}
 
 **Instructions for your Briefing Output (use Markdown):**
 1.  **Incident Overview:** Summarize the core facts concisely using bullet points.
@@ -132,24 +147,14 @@ export async function generateStopSearchBriefing(
     const incidentLng = parseFloat(location.longitude);
     if(isNaN(incidentLat) || isNaN(incidentLng)) return "Briefing not available due to invalid location data.";
 
-    const targetMoment = moment(datetime);
-    const oneMonthBefore = targetMoment.clone().subtract(1, 'month');
-    const oneMonthAfter = targetMoment.clone().add(1, 'month');
-    const proximityRadiusKm = 0.25;
-    
-    const nearbyCrimes = allCrimes.filter(c => {
-        if (!c.location?.latitude || !c.location?.longitude) return false;
-        const cLat = parseFloat(c.location.latitude);
-        const cLng = parseFloat(c.location.longitude);
-        if(isNaN(cLat) || isNaN(cLng)) return false;
-        const crimeMoment = moment(c.month);
-        return haversineDistance(incidentLat, incidentLng, cLat, cLng) <= proximityRadiusKm &&
-               crimeMoment.isBetween(oneMonthBefore, oneMonthAfter, undefined, '[]');
-    }).map(c => ({
-        type: c.category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+    const { nearbyCrimes, proximityRadiusKm } = findNearbyEvents(incidentLat, incidentLng, datetime, allCrimes, allStopSearches);
+
+    const formattedNearbyCrimes = nearbyCrimes.map(c => ({
+        type: formatCategory(c.category),
         date: moment(c.month).format('MMMM YYYY'),
         street: c.location?.street?.name ?? 'Unknown Street'
     }));
+
 
     const prompt = `You are a highly experienced police analyst AI. Analyze a specific Stop and Search incident and provide a comprehensive briefing.
 
@@ -161,7 +166,7 @@ export async function generateStopSearchBriefing(
 - Outcome: ${outcome}
 
 **Contextual Data (within ${proximityRadiusKm * 1000}m and +/- 1 month):**
-${nearbyCrimes.length > 0 ? `Nearby Crimes: ${JSON.stringify(nearbyCrimes.slice(0, 5), null, 2)}` : 'No significant nearby crime incidents.'}
+${formattedNearbyCrimes.length > 0 ? `Nearby Crimes: ${JSON.stringify(formattedNearbyCrimes.slice(0, 5), null, 2)}` : 'No significant nearby crime incidents.'}
 
 **Instructions for your Briefing Output (use Markdown):**
 1.  **Incident Summary:** Summarize the core facts of the stop and search.
@@ -184,7 +189,7 @@ export async function summarizeCrimeTrends(crimes: Crime[]): Promise<string> {
     }
 
     const crimeDataForLLM = crimes.slice(0, 100).map(crime => ({
-        type: crime.category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        type: formatCategory(crime.category),
         date: moment(crime.month).format('MMMM YYYY'),
         street: crime.location?.street?.name ?? 'Unknown Street',
     }));
@@ -210,7 +215,7 @@ export async function generateCrimeInsights(crimes: Crime[]): Promise<Insight[]>
     if (crimes.length === 0) return [];
 
     const crimeDataForLLM = crimes.slice(0, 200).map(crime => ({
-        type: crime.category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        type: formatCategory(crime.category),
         date: moment(crime.month).format('MMMM YYYY'),
         street: crime.location?.street?.name ?? 'Unknown Street',
     }));
@@ -239,7 +244,7 @@ export async function generatePredictiveHotspots(crimes: Crime[]): Promise<Predi
     if (crimes.length < 10) return [];
 
     const crimeDataForLLM = crimes.map(crime => ({
-        type: crime.category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        type: formatCategory(crime.category),
         date: moment(crime.month).format('YYYY-MM'),
         street: crime.location?.street?.name ?? 'Unknown Street',
         latitude: parseFloat(crime.location.latitude),

@@ -84,7 +84,7 @@ interface CrimeMapProps {
   isInsightsVisible: boolean;
   isPredictiveHotspotsVisible: boolean;
   isMapEffectEnabled: boolean;
-  onCrimeSelect: (crimeId: string | null) => void;
+  onCrimeSelect: (type: 'crime' | 'stopSearch' | null, item?: Crime | StopSearch) => void;
   selectedCrimeId: string | null;
   selectedStopSearch: StopSearch | null;
   allCrimes: Crime[];
@@ -141,7 +141,8 @@ const CrimeMap: React.FC<CrimeMapProps> = ({
     const map = L.map(mapContainerRef.current, {
         center: [53.522820, -1.128462],
         zoom: 13,
-        layers: [satelliteLayer] // Default to satellite view
+        layers: [satelliteLayer], // Default to satellite view
+        attributionControl: false
     });
     mapRef.current = map;
     
@@ -217,7 +218,7 @@ const CrimeMap: React.FC<CrimeMapProps> = ({
             if (stopSearchCircleRef.current && mapRef.current) {
                 mapRef.current.removeLayer(stopSearchCircleRef.current);
             }
-            onCrimeSelect(crimeId);
+            onCrimeSelect('crime', crime);
         });
         
         const popup = L.popup({ autoPan: true, autoPanPadding: L.point(50, 50), closeOnClick: false, autoClose: false })
