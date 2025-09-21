@@ -47,7 +47,7 @@ const createCrimePopupContent = (crime: Crime, briefingContent: string): string 
     return `<div class="crime-marker-popup">
         <h3 class="font-bold text-lg mb-2">${crime.category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h3>
         <div><strong>Date:</strong> ${moment(crime.month).format('MMMM YYYY')}</div>
-        <div><strong>Location:</strong> ${crime.location?.street?.name ?? 'On or near the street'}</div>
+        <div><strong>Location:</strong> ${crime.location.street.name}</div>
         <div><strong>Outcome:</strong> ${crime.outcome_status?.category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) ?? 'N/A'}</div>
         <div class="briefing-content">${briefingContent}</div>
     </div>`;
@@ -66,9 +66,12 @@ const loadingBriefingContent = `<div class="loading-spinner"></div><p class="tex
 
 
 // Fix for default marker icons in a browser ESM environment
+import iconUrl from 'leaflet/dist/images/marker-icon.png';
+import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
+
 let DefaultIcon = L.icon({
-    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    iconUrl: iconUrl,
+    shadowUrl: shadowUrl,
     iconSize: [25, 41],
     iconAnchor: [12, 41]
 });
@@ -76,10 +79,10 @@ L.Marker.prototype.options.icon = DefaultIcon;
 
 const getCrimeVisuals = (crimeDate: string) => {
   const daysOld = moment().diff(moment(crimeDate), 'days');
-  if (daysOld <= 7) return { color: 'rgb(255,0,0)', size: 28 };
-  if (daysOld <= 30) return { color: 'rgb(255,165,0)', size: 24 };
-  if (daysOld <= 90) return { color: 'rgb(255,255,0)', size: 20 };
-  return { color: 'rgb(0,255,0)', size: 16 };
+  if (daysOld <= 7) return { color: '#ef4444', size: 28 }; // red-500
+  if (daysOld <= 30) return { color: '#f97316', size: 24 }; // orange-500
+  if (daysOld <= 90) return { color: '#eab308', size: 20 }; // yellow-500
+  return { color: '#22c55e', size: 16 }; // green-500
 };
 
 
@@ -91,7 +94,6 @@ interface CrimeMapProps {
   isRecencyHeatmapVisible: boolean;
   isInsightsVisible: boolean;
   isPredictiveHotspotsVisible: boolean;
-  isMapEffectEnabled: boolean;
   onCrimeSelect: (type: 'crime' | 'stopSearch' | null, item?: Crime | StopSearch) => void;
   selectedCrimeId: string | null;
   selectedStopSearch: StopSearch | null;
@@ -107,7 +109,6 @@ const CrimeMap: React.FC<CrimeMapProps> = ({
   isRecencyHeatmapVisible,
   isInsightsVisible,
   isPredictiveHotspotsVisible,
-  isMapEffectEnabled,
   onCrimeSelect,
   selectedCrimeId,
   selectedStopSearch,
@@ -172,22 +173,7 @@ const CrimeMap: React.FC<CrimeMapProps> = ({
         map.remove();
         mapRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  
-  // Update map effect
-  useEffect(() => {
-      const tilePane = mapContainerRef.current?.querySelector('.leaflet-tile-pane') as HTMLElement | null;
-      if (tilePane) {
-          if (isMapEffectEnabled) {
-            tilePane.style.animation = 'mapEffect 8s infinite alternate ease-in-out';
-            tilePane.style.filter = '';
-          } else {
-            tilePane.style.animation = 'none';
-            tilePane.style.filter = 'grayscale(20%) contrast(0.9) brightness(0.9)';
-          }
-      }
-  }, [isMapEffectEnabled]);
+  }, [onCrimeSelect]);
 
   // Update crime markers
   useEffect(() => {
@@ -253,7 +239,6 @@ const CrimeMap: React.FC<CrimeMapProps> = ({
         markers.addLayer(marker);
     });
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [crimes, onCrimeSelect, allCrimes, allStopSearches]);
 
   // Handle selected crime from list
@@ -271,11 +256,10 @@ const CrimeMap: React.FC<CrimeMapProps> = ({
     });
 
     if (targetMarker) {
-        markers.zoomToShowLayer(targetMarker, () => {
+        (markers as any).zoomToShowLayer(targetMarker, () => {
             targetMarker?.openPopup();
         });
     }
-
   }, [selectedCrimeId]);
 
 
@@ -342,7 +326,6 @@ const CrimeMap: React.FC<CrimeMapProps> = ({
                 }
             });
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedStopSearch, allCrimes, allStopSearches]);
 
 
@@ -386,7 +369,7 @@ const CrimeMap: React.FC<CrimeMapProps> = ({
 
     if (isInsightsVisible) {
         insights.forEach(insight => {
-            const relevantCrime = crimes.find(c => c.location?.street?.name.toLowerCase().includes(insight.area.toLowerCase()));
+            const relevantCrime = crimes.find(c => c.location.street.name.toLowerCase().includes(insight.area.toLowerCase()));
             const lat = relevantCrime ? parseFloat(relevantCrime.location.latitude) : 53.522820;
             const lng = relevantCrime ? parseFloat(relevantCrime.location.longitude) : -1.128462;
 
@@ -450,18 +433,8 @@ const CrimeMap: React.FC<CrimeMapProps> = ({
     <div 
         id="map" 
         ref={mapContainerRef} 
-        className="h-[70vh] w-full rounded-md shadow-[inset_0_0_10px_rgba(0,0,0,0.9),_0_0_5px_var(--accent-primary),_inset_0_0_0_2px_var(--accent-primary),_inset_0_0_0_4px_var(--border-color),_inset_0_0_0_6px_var(--bg-dark)] border-4 border-solid border-[#FFD700] bg-[#0A0A0A] relative mb-1.5"
-    >
-      <div className="absolute top-2.5 left-1/2 -translate-x-1/2 z-[1000] flex flex-col items-center text-[#FFD700] font-bold text-xs" style={{textShadow: '0 0 2px rgba(255,215,0,0.7)'}}>
-          <div className="bg-[#21262D] py-1 px-2 rounded-md border border-solid border-[#FFD700] shadow-[0_0_5px_rgba(0,0,0,0.5)] flex items-center justify-center gap-1">
-              <span>N</span>
-              <svg viewBox="0 0 24 24" className="stroke-[#FFD700] fill-none w-4 h-4 align-middle">
-                  <line x1="12" y1="2" x2="12" y2="22"></line>
-                  <polyline points="5 9 12 2 19 9"></polyline>
-              </svg>
-          </div>
-      </div>
-    </div>
+        className="h-[70vh] w-full rounded-xl shadow-lg bg-gray-900 relative mb-4"
+    />
   );
 };
 

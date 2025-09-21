@@ -13,12 +13,11 @@ const getNestedValue = (obj: any, path: string): any => {
     return path.split('.').reduce((acc, part) => acc && acc[part], obj);
 };
 
-const MilitaryButton: React.FC<{ onClick?: () => void; children: React.ReactNode; disabled?: boolean; className?: string }> = ({ onClick, children, disabled, className }) => (
+const ActionButton: React.FC<{ onClick?: () => void; children: React.ReactNode; disabled?: boolean; className?: string }> = ({ onClick, children, disabled, className }) => (
     <button
         onClick={onClick}
         disabled={disabled}
-        className={`rounded-[0.15rem] p-2 px-3.5 font-bold uppercase tracking-wider shadow-[1.5px_1.5px_3px_rgba(0,0,0,0.5),_0_0_2px_var(--accent-primary)] transition-all duration-150 border-2 border-solid border-[#FFD700] inline-flex items-center justify-center gap-1.5 text-sm text-[#FFD700] bg-gradient-to-b from-[#21262D] to-[#161B22] hover:from-[#161B22] hover:to-[#21262D] hover:shadow-[1px_1px_1.5px_rgba(0,0,0,0.3),_0_0_4px_var(--accent-primary)] hover:brightness-125 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
-        style={{ textShadow: '0.5px 0.5px 1px rgba(0,0,0,0.5), 0 0 1px var(--accent-primary)' }}
+        className={`rounded-md p-2 px-3 font-semibold shadow-sm transition-all duration-150 inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
     >
         {children}
     </button>
@@ -77,7 +76,6 @@ const App: React.FC = () => {
     const [isRecencyHeatmapVisible, setRecencyHeatmapVisible] = useState(false);
     const [isInsightsVisible, setInsightsVisible] = useState(false);
     const [isPredictiveHotspotsVisible, setPredictiveHotspotsVisible] = useState(false);
-    const [isMapEffectEnabled, setMapEffectEnabled] = useState(true);
 
     const [insights, setInsights] = useState<Insight[]>([]);
     const [predictiveHotspots, setPredictiveHotspots] = useState<PredictiveHotspot[]>([]);
@@ -162,13 +160,13 @@ const App: React.FC = () => {
         }
     }, []);
 
-    const handleSummarizeTrends = () => handleAIFeature(
+    const handleSummarizeTrends = useCallback(() => handleAIFeature(
         'trend',
         () => geminiService.summarizeCrimeTrends(filteredCrimes),
         (summary) => <div dangerouslySetInnerHTML={{ __html: summary.replace(/\n/g, '<br/>') }} />
-    );
+    ), [handleAIFeature, filteredCrimes]);
 
-    const handleGenerateInsights = () => handleAIFeature(
+    const handleGenerateInsights = useCallback(() => handleAIFeature(
         'insights',
         () => geminiService.generateCrimeInsights(filteredCrimes),
         (insightData: Insight[]) => {
@@ -178,9 +176,9 @@ const App: React.FC = () => {
                 <ul className="list-disc pl-5">{insightData.map((item, i) => <li key={i}><strong>{item.area}:</strong> {item.insight}</li>)}</ul> :
                 'No insights could be generated from the current data.';
         }
-    );
+    ), [handleAIFeature, filteredCrimes]);
 
-    const handleGeneratePredictiveHotspots = () => handleAIFeature(
+    const handleGeneratePredictiveHotspots = useCallback(() => handleAIFeature(
         'predictive',
         () => geminiService.generatePredictiveHotspots(allCrimes),
         (hotspotData: PredictiveHotspot[]) => {
@@ -190,7 +188,7 @@ const App: React.FC = () => {
                 <ul className="list-disc pl-5">{hotspotData.map((item, i) => <li key={i}><strong>{item.area} ({item.predictedCrimeType}):</strong> {item.reason}</li>)}</ul> :
                 'No predictive hotspots could be generated.';
         }
-    );
+    ), [handleAIFeature, allCrimes]);
     
     const closeModal = () => dispatchModal({ type: 'CLOSE_MODAL' });
 
@@ -223,68 +221,39 @@ const App: React.FC = () => {
     };
 
     return (
-        <div className="container mx-auto bg-[#161B22] p-2 sm:p-2.5 md:p-3 rounded-lg shadow-[0_0_15px_rgba(0,0,0,0.8),_0_0_5px_var(--accent-primary),_inset_0_0_0_2px_var(--accent-primary),_inset_0_0_0_4px_var(--border-color),_inset_0_0_0_6px_var(--bg-dark)] border-4 border-solid border-[#FFD700] max-w-7xl">
+        <div className="container mx-auto bg-gray-900 p-2 sm:p-4 rounded-lg shadow-2xl max-w-7xl">
             {/* Header */}
-            <header className="flex flex-col sm:flex-row justify-between items-center mb-1">
+            <header className="flex flex-col sm:flex-row justify-between items-center mb-4">
                 <div className="flex items-center gap-2">
-                    <svg className="w-16 h-16 text-green-400" style={{filter: 'drop-shadow(0 0 5px #059669)'}} viewBox="0 0 100 100" fill="none" stroke="currentColor">
-                         <defs>
-                            <linearGradient id="radarSweepGradient" gradientUnits="userSpaceOnUse" x1="50" y1="50" x2="85.35" y2="14.65">
-                                <stop offset="0%" stopColor="currentColor" stopOpacity="0" />
-                                <stop offset="80%" stopColor="currentColor" stopOpacity="0.5" />
-                                <stop offset="100%" stopColor="currentColor" stopOpacity="1" />
-                            </linearGradient>
-                            <filter id="glow">
-                                <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-                                <feMerge>
-                                    <feMergeNode in="coloredBlur"/>
-                                    <feMergeNode in="SourceGraphic"/>
-                                </feMerge>
-                            </filter>
-                        </defs>
-                        <circle cx="50" cy="50" r="45" strokeWidth="3" opacity="0.9"/>
-                        <circle cx="50" cy="50" r="30" strokeWidth="2" opacity="0.5"/>
-                        <circle cx="50" cy="50" r="15" strokeWidth="1" opacity="0.3"/>
-                        <line x1="50" y1="50" x2="50" y2="5" strokeWidth="4" strokeLinecap="round" stroke="url(#radarSweepGradient)" filter="url(#glow)">
-                            <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="4s" repeatCount="indefinite"/>
-                        </line>
-                        {/* Blips */}
-                        <circle cx="65" cy="35" r="2" fill="currentColor" opacity="0">
-                            <animate attributeName="opacity" values="0;1;0" dur="4s" begin="0.5s" repeatCount="indefinite" />
-                        </circle>
-                        <circle cx="30" cy="60" r="2" fill="currentColor" opacity="0">
-                            <animate attributeName="opacity" values="0;1;0" dur="4s" begin="2.1s" repeatCount="indefinite" />
-                        </circle>
-                         <circle cx="70" cy="70" r="2.5" fill="currentColor" opacity="0">
-                            <animate attributeName="opacity" values="0;1;0" dur="4s" begin="3.2s" repeatCount="indefinite" />
-                        </circle>
+                    <svg className="w-10 h-10 sm:w-12 sm:h-12 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
                     </svg>
-                    <h1 className="text-xl sm:text-4xl font-bold text-[#FFD700]" style={{textShadow: '0 0 3px rgba(255, 215, 0, 0.7)'}}>Doncaster Crime Activity</h1>
+                    <h1 className="text-xl sm:text-3xl font-bold text-gray-50">Doncaster Crime Activity</h1>
                 </div>
             </header>
 
             {/* Notification and Update */}
-            <div className="flex flex-col md:flex-row items-center justify-between mb-2 p-1.5 bg-[#21262D] border-2 border-solid border-[#4A5D6B] rounded-sm shadow-[0_0_5px_rgba(0,0,0,0.5)]">
-                <div className="font-semibold text-xs mb-1 md:mb-0 text-[#FFD700]" style={{textShadow: '0 0 1px var(--accent-primary)'}}>{notification}</div>
-                <MilitaryButton onClick={fetchData} disabled={isLoading}>Update Now</MilitaryButton>
+            <div className="flex flex-col md:flex-row items-center justify-between mb-4 p-2 bg-gray-800 rounded-lg shadow-md">
+                <div className="font-semibold text-xs mb-2 md:mb-0 text-gray-300">{notification}</div>
+                <ActionButton onClick={fetchData} disabled={isLoading}>Update Now</ActionButton>
             </div>
             
             {/* Controls */}
-            <div className="mb-2">
-                <label htmlFor="crimeCategoryFilter" className="block text-xs font-medium mb-0.5 text-[#FFD700]">Filter by Crime Category:</label>
-                <select id="crimeCategoryFilter" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="mt-0.5 block w-full pl-1.5 pr-5 py-0.5 text-xs border focus:outline-none sm:text-sm bg-[#0D1117] text-[#E0E6ED] border-[#4A5D6B] rounded-sm shadow-[inset_0_0_3px_rgba(0,0,0,0.5)] focus:border-[#00BFFF] focus:shadow-[inset_0_0_3px_rgba(0,0,0,0.5),_0_0_5px_var(--accent-secondary)]">
+            <div className="mb-4">
+                <label htmlFor="crimeCategoryFilter" className="block text-sm font-medium mb-1 text-gray-300">Filter by Crime Category:</label>
+                <select id="crimeCategoryFilter" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="block w-full pl-3 pr-10 py-2 text-base border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-gray-700 text-gray-50 shadow-sm">
                     <option value="all">All Categories</option>
                     {crimeCategories.map(cat => <option key={cat.url} value={cat.url}>{cat.name}</option>)}
                 </select>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1 mb-2">
-                <MilitaryButton onClick={handleSummarizeTrends}>✨ Summarize</MilitaryButton>
-                <MilitaryButton onClick={() => { setDensityHeatmapVisible(!isDensityHeatmapVisible); if(!isDensityHeatmapVisible) setRecencyHeatmapVisible(false); }} className={isDensityHeatmapVisible ? 'active-glow' : ''}>{isDensityHeatmapVisible ? 'Hide Density' : 'Show Density'}</MilitaryButton>
-                <MilitaryButton onClick={() => { setRecencyHeatmapVisible(!isRecencyHeatmapVisible); if(!isRecencyHeatmapVisible) setDensityHeatmapVisible(false); }} className={isRecencyHeatmapVisible ? 'active-glow' : ''}>{isRecencyHeatmapVisible ? 'Hide Recency' : 'Show Recency'}</MilitaryButton>
-                <MilitaryButton onClick={() => { insights.length > 0 ? setInsightsVisible(!isInsightsVisible) : handleGenerateInsights(); }} className={isInsightsVisible ? 'active-glow' : ''}>{isInsightsVisible ? 'Hide Insights' : 'Show Insights'}</MilitaryButton>
-                <MilitaryButton onClick={() => setMapEffectEnabled(!isMapEffectEnabled)} className={isMapEffectEnabled ? '' : 'active-glow'}>{isMapEffectEnabled ? 'FX Off' : 'FX On'}</MilitaryButton>
-                <MilitaryButton onClick={() => { predictiveHotspots.length > 0 ? setPredictiveHotspotsVisible(!isPredictiveHotspotsVisible) : handleGeneratePredictiveHotspots(); }} className={`${isPredictiveHotspotsVisible ? 'active-glow' : ''} ${modal.isLoading && modal.modal.predictive ? 'predictive-generating' : ''}`}>{isPredictiveHotspotsVisible ? 'Hide Hotspots' : '🔮 Predict'}</MilitaryButton>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 mb-4">
+                <ActionButton onClick={handleSummarizeTrends}>✨ Summarize</ActionButton>
+                <ActionButton onClick={() => { setDensityHeatmapVisible(!isDensityHeatmapVisible); if(!isDensityHeatmapVisible) setRecencyHeatmapVisible(false); }} className={isDensityHeatmapVisible ? 'active-glow' : ''}>{isDensityHeatmapVisible ? 'Hide Density' : 'Show Density'}</ActionButton>
+                <ActionButton onClick={() => { setRecencyHeatmapVisible(!isRecencyHeatmapVisible); if(!isRecencyHeatmapVisible) setDensityHeatmapVisible(false); }} className={isRecencyHeatmapVisible ? 'active-glow' : ''}>{isRecencyHeatmapVisible ? 'Hide Recency' : 'Show Recency'}</ActionButton>
+                <ActionButton onClick={() => { insights.length > 0 ? setInsightsVisible(!isInsightsVisible) : handleGenerateInsights(); }} className={isInsightsVisible ? 'active-glow' : ''}>{isInsightsVisible ? 'Hide Insights' : 'Show Insights'}</ActionButton>
+                <ActionButton onClick={() => { predictiveHotspots.length > 0 ? setPredictiveHotspotsVisible(!isPredictiveHotspotsVisible) : handleGeneratePredictiveHotspots(); }} className={`${isPredictiveHotspotsVisible ? 'active-glow' : ''} ${modal.isLoading && modal.modal.predictive ? 'predictive-generating' : ''}`}>{isPredictiveHotspotsVisible ? 'Hide Hotspots' : '🔮 Predict'}</ActionButton>
             </div>
 
             {/* Map */}
@@ -297,7 +266,6 @@ const App: React.FC = () => {
                     isRecencyHeatmapVisible={isRecencyHeatmapVisible}
                     isInsightsVisible={isInsightsVisible}
                     isPredictiveHotspotsVisible={isPredictiveHotspotsVisible}
-                    isMapEffectEnabled={isMapEffectEnabled}
                     onCrimeSelect={handleItemSelection}
                     selectedCrimeId={selectedCrimeId}
                     selectedStopSearch={selectedStopSearch}
@@ -319,66 +287,70 @@ const App: React.FC = () => {
 
             {/* Crime List */}
             <CollapsibleSection title="Recent Crime Incidents">
-                <table className="min-w-full divide-y divide-[#4A5D6B]">
-                    <thead>
-                        <tr className="bg-[#21262D]">
-                            <th onClick={() => handleCrimeSort('month')} className="cursor-pointer p-2.5 text-left font-bold text-[#FFD700] border-b border-solid border-[#FFD700] shadow-[0_0_2px_rgba(255,215,0,0.5)]">Date & Time {crimeSortConfig.key === 'month' && (crimeSortConfig.direction === 'asc' ? '▲' : '▼')}</th>
-                            <th onClick={() => handleCrimeSort('category')} className="cursor-pointer p-2.5 text-left font-bold text-[#FFD700] border-b border-solid border-[#FFD700] shadow-[0_0_2px_rgba(255,215,0,0.5)]">Type {crimeSortConfig.key === 'category' && (crimeSortConfig.direction === 'asc' ? '▲' : '▼')}</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#4A5D6B]">
-                        {sortedCrimes.map(crime => {
-                            const crimeId = crime.persistent_id || String(crime.id);
-                            return (
-                                <tr 
-                                    key={crimeId} 
-                                    className={`bg-[#161B22] hover:bg-[#21262D] cursor-pointer ${(selectedCrimeId === crimeId) ? 'table-row-highlighted' : ''}`}
-                                    onClick={() => handleItemSelection('crime', crime)}
-                                >
-                                    <td className="p-2 whitespace-nowrap">{moment(crime.month).format("MMMM YYYY")}</td>
-                                    <td className="p-2 whitespace-nowrap">{crime.category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
+                <div className="overflow-x-auto rounded-lg shadow-md">
+                    <table className="min-w-full divide-y divide-gray-700 text-sm">
+                        <thead className="bg-gray-800">
+                            <tr>
+                                <th onClick={() => handleCrimeSort('month')} className="cursor-pointer p-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Date {crimeSortConfig.key === 'month' && (crimeSortConfig.direction === 'asc' ? '▲' : '▼')}</th>
+                                <th onClick={() => handleCrimeSort('category')} className="cursor-pointer p-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Type {crimeSortConfig.key === 'category' && (crimeSortConfig.direction === 'asc' ? '▲' : '▼')}</th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-gray-900 divide-y divide-gray-700">
+                            {sortedCrimes.map(crime => {
+                                const crimeId = crime.persistent_id || String(crime.id);
+                                return (
+                                    <tr 
+                                        key={crimeId} 
+                                        className={`hover:bg-gray-800 cursor-pointer ${(selectedCrimeId === crimeId) ? 'table-row-highlighted' : ''}`}
+                                        onClick={() => handleItemSelection('crime', crime)}
+                                    >
+                                        <td className="p-3 whitespace-nowrap">{moment(crime.month).format("MMMM YYYY")}</td>
+                                        <td className="p-3 whitespace-nowrap">{crime.category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
             </CollapsibleSection>
 
             {/* Stop & Search List */}
             <CollapsibleSection title="Recent Stop & Search Incidents">
-                <table className="min-w-full divide-y divide-[#4A5D6B] text-xs">
-                     <thead className="bg-[#21262D]">
-                        <tr>
-                            {stopSearchHeaders.map(header => (
-                                <th 
-                                    key={header.key} 
-                                    onClick={() => handleStopSearchSort(header.key)}
-                                    className="cursor-pointer p-2 text-left font-bold uppercase text-[#FFD700] border-b border-solid border-[#FFD700] shadow-[0_0_2px_rgba(255,215,0,0.5)]"
-                                >
-                                    {header.label} {stopSearchSortConfig.key === header.key && (stopSearchSortConfig.direction === 'asc' ? '▲' : '▼')}
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#4A5D6B]">
-                        {sortedStopSearches.slice(0, 50).map((event, i) => (
-                            <tr 
-                                key={`${event.datetime}-${i}`}
-                                className="bg-[#161B22] hover:bg-[#21262D] cursor-pointer" 
-                                onClick={() => handleItemSelection('stopSearch', event)}
-                            >
-                                <td className="p-2 whitespace-nowrap">{moment(event.datetime).format('YYYY-MM-DD HH:mm')}</td>
-                                <td className="p-2 whitespace-nowrap">{event.type || 'N/A'}</td>
-                                <td className="p-2 whitespace-nowrap">{event.object_of_search || 'N/A'}</td>
-                                <td className="p-2 whitespace-nowrap">{event.gender || 'N/A'}</td>
-                                <td className="p-2 whitespace-nowrap">{event.age_range || 'N/A'}</td>
-                                <td className="p-2 whitespace-nowrap">{event.self_defined_ethnicity || event.officer_defined_ethnicity || 'N/A'}</td>
-                                <td className="p-2 whitespace-nowrap">{event.outcome || 'N/A'}</td>
-                                <td className="p-2 whitespace-nowrap">{getNestedValue(event, 'location.street.name') || 'N/A'}</td>
+                <div className="overflow-x-auto rounded-lg shadow-md">
+                    <table className="min-w-full divide-y divide-gray-700 text-sm">
+                         <thead className="bg-gray-800">
+                            <tr>
+                                {stopSearchHeaders.map(header => (
+                                    <th 
+                                        key={header.key} 
+                                        onClick={() => handleStopSearchSort(header.key)}
+                                        className="cursor-pointer p-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider"
+                                    >
+                                        {header.label} {stopSearchSortConfig.key === header.key && (stopSearchSortConfig.direction === 'asc' ? '▲' : '▼')}
+                                    </th>
+                                ))}
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="bg-gray-900 divide-y divide-gray-700">
+                            {sortedStopSearches.slice(0, 50).map((event, i) => (
+                                <tr 
+                                    key={`${event.datetime}-${i}`}
+                                    className="hover:bg-gray-800 cursor-pointer" 
+                                    onClick={() => handleItemSelection('stopSearch', event)}
+                                >
+                                    <td className="p-3 whitespace-nowrap">{moment(event.datetime).format('YYYY-MM-DD HH:mm')}</td>
+                                    <td className="p-3 whitespace-nowrap">{event.type || 'N/A'}</td>
+                                    <td className="p-3 whitespace-nowrap">{event.object_of_search || 'N/A'}</td>
+                                    <td className="p-3 whitespace-nowrap">{event.gender || 'N/A'}</td>
+                                    <td className="p-3 whitespace-nowrap">{event.age_range || 'N/A'}</td>
+                                    <td className="p-3 whitespace-nowrap">{event.self_defined_ethnicity || event.officer_defined_ethnicity || 'N/A'}</td>
+                                    <td className="p-3 whitespace-nowrap">{event.outcome || 'N/A'}</td>
+                                    <td className="p-3 whitespace-nowrap">{getNestedValue(event, 'location.street.name') || 'N/A'}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </CollapsibleSection>
         </div>
     );
