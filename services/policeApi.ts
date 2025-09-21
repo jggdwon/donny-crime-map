@@ -44,7 +44,7 @@ export async function fetchCrimeData(dates: string[]): Promise<Crime[]> {
             .catch(err => (console.error(`Error fetching crime data for ${date}:`, err), []))
     );
     const results = await Promise.all(promises);
-    return results.flat().filter(crime => crime.location?.latitude && crime.location?.longitude);
+    return results.flat().filter(crime => crime.location?.latitude && crime.location?.longitude && crime.location.street);
 }
 
 export async function fetchStopAndSearchData(dates: string[]): Promise<StopSearch[]> {

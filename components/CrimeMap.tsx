@@ -47,7 +47,7 @@ const createCrimePopupContent = (crime: Crime, briefingContent: string): string 
     return `<div class="crime-marker-popup">
         <h3 class="font-bold text-lg mb-2">${crime.category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h3>
         <div><strong>Date:</strong> ${moment(crime.month).format('MMMM YYYY')}</div>
-        <div><strong>Location:</strong> ${crime.location.street.name}</div>
+        <div><strong>Location:</strong> ${crime.location?.street?.name ?? 'On or near the street'}</div>
         <div><strong>Outcome:</strong> ${crime.outcome_status?.category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) ?? 'N/A'}</div>
         <div class="briefing-content">${briefingContent}</div>
     </div>`;
@@ -386,7 +386,7 @@ const CrimeMap: React.FC<CrimeMapProps> = ({
 
     if (isInsightsVisible) {
         insights.forEach(insight => {
-            const relevantCrime = crimes.find(c => c.location.street.name.toLowerCase().includes(insight.area.toLowerCase()));
+            const relevantCrime = crimes.find(c => c.location?.street?.name.toLowerCase().includes(insight.area.toLowerCase()));
             const lat = relevantCrime ? parseFloat(relevantCrime.location.latitude) : 53.522820;
             const lng = relevantCrime ? parseFloat(relevantCrime.location.longitude) : -1.128462;
 
