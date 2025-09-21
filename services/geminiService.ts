@@ -6,7 +6,7 @@ import moment from 'moment';
 // so we can use a relative path.
 const API_BASE_URL = import.meta.env.PROD ? '' : 'http://34.41.209.110:3001';
 
-async function callAIApi(body: object): Promise<string> {
+async function callAIApi(body: object): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/api/generate`, {
         method: 'POST',
         headers: {
@@ -21,8 +21,7 @@ async function callAIApi(body: object): Promise<string> {
     }
 
     const data = await response.json();
-    // Return the AI's text content directly
-    return data.text;
+    return data;
 }
 
 function parseJsonResponse<T,>(text: string): T {
@@ -128,11 +127,11 @@ ${formattedNearbyStopSearches.length > 0 ? `Nearby Stop & Searches: ${JSON.strin
 
 **Incident Briefing:**`;
 
-    const responseText = await callAIApi({
+    const responseData = await callAIApi({
         prompt: prompt,
         modelName: 'gemini-1.5-flash',
     });
-    return responseText;
+    return responseData.text;
 }
 
 export async function generateStopSearchBriefing(
@@ -175,11 +174,11 @@ ${formattedNearbyCrimes.length > 0 ? `Nearby Crimes: ${JSON.stringify(formattedN
 
 **Analyst Briefing:**`;
 
-    const responseText = await callAIApi({
+    const responseData = await callAIApi({
         prompt: prompt,
         modelName: 'gemini-1.5-flash',
     });
-    return responseText;
+    return responseData.text;
 }
 
 
@@ -204,11 +203,11 @@ ${JSON.stringify(crimeDataForLLM, null, 2)}
 
 **Summary of Crime Trends:**`;
     
-    const responseText = await callAIApi({
+    const responseData = await callAIApi({
         prompt: prompt,
         modelName: 'gemini-1.5-flash',
     });
-    return responseText;
+    return responseData.text;
 }
 
 export async function generateCrimeInsights(crimes: Crime[]): Promise<Insight[]> {
@@ -231,12 +230,12 @@ ${JSON.stringify(crimeDataForLLM, null, 2)}
 
 JSON Output:`;
     
-    const responseText = await callAIApi({
+    const responseData = await callAIApi({
         prompt: prompt,
         modelName: 'gemini-1.5-flash',
         jsonResponse: true,
     });
-    return parseJsonResponse<Insight[]>(responseText);
+    return parseJsonResponse<Insight[]>(JSON.stringify(responseData.json));
 }
 
 
@@ -270,10 +269,10 @@ ${JSON.stringify(crimeDataForLLM, null, 2)}
 
 JSON Output:`;
 
-    const responseText = await callAIApi({
+    const responseData = await callAIApi({
         prompt: prompt,
         modelName: 'gemini-1.5-flash',
         jsonResponse: true,
     });
-    return parseJsonResponse<PredictiveHotspot[]>(responseText);
+    return parseJsonResponse<PredictiveHotspot[]>(JSON.stringify(responseData.json));
 }
