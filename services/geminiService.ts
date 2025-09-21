@@ -4,7 +4,7 @@ import moment from 'moment';
 // The backend server URL. When running locally, it's localhost.
 // In production on the VM, Nginx will proxy requests from the same host,
 // so we can use a relative path.
-const API_BASE_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.PROD ? '' : 'http://34.41.209.110:3001';
 
 async function callAIApi(body: object): Promise<string> {
     const response = await fetch(`${API_BASE_URL}/api/generate`, {
