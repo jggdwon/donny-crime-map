@@ -55,13 +55,13 @@ app.post('/api/generate', async (req, res) => {
         try {
           const json = JSON.parse(jsonStr);
           log('Successfully parsed JSON response.');
-          res.json({ text: json });
+          res.json({ json: json });
         } catch (e) {
           log(`Failed to parse JSON response: ${e}. Raw text: ${text}`);
           res.status(500).json({ error: "Failed to parse AI response as JSON." });
         }
     } else {
-        log('Sending non-JSON response.');
+        log('Sending text response.');
         res.json({ text });
     }
 

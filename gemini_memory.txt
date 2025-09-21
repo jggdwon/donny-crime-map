@@ -100,3 +100,4 @@
 *   **VS Code Restart:** User is restarting VS Code due to it being buggy.
 - **Frontend Port Change (to 80):** The frontend port has been changed to 80.
 - **PM2 App Name Correction:** The PM2 app name for the backend is `crime-map-api`, not `doncaster-crime-map-server`.
+- **Current Focus:** We are developing on a Windows laptop, with plans to deploy and test on a Google Cloud VM. Our primary goal is to ensure the code functions correctly and displays optimally on mobile devices.
