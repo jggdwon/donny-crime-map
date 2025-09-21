@@ -6,7 +6,7 @@ import moment from 'moment';
 // so we can use a relative path.
 const API_BASE_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
 
-async function callAIApi<T>(body: object): Promise<T> {
+async function callAIApi(body: object): Promise<string> {
     const response = await fetch(`${API_BASE_URL}/api/generate`, {
         method: 'POST',
         headers: {
@@ -21,8 +21,8 @@ async function callAIApi<T>(body: object): Promise<T> {
     }
 
     const data = await response.json();
-    // The actual AI response text is nested inside the 'text' property
-    return data as T;
+    // Return the AI's text content directly
+    return data.text;
 }
 
 function parseJsonResponse<T,>(text: string): T {
@@ -114,7 +114,7 @@ export async function generateIncidentBriefing(
 **Main Incident Details:**
 - Crime Type: ${formatCategory(category)}
 - Date: ${moment(month).format('MMMM YYYY')}
-- Location: ${location.street.name}
+- Location: ${location.street?.name ?? 'Unknown Street'}
 - Outcome: ${crime.outcome_status ? formatCategory(crime.outcome_status.category) : 'No specific outcome'}
 
 **Proximity Events (within ${proximityRadiusKm * 1000}m and +/- 1 month):**
@@ -128,11 +128,11 @@ ${formattedNearbyStopSearches.length > 0 ? `Nearby Stop & Searches: ${JSON.strin
 
 **Incident Briefing:**`;
 
-    const response = await callAIApi<{ text: string }>({
+    const responseText = await callAIApi({
         prompt: prompt,
         modelName: 'gemini-1.5-flash',
     });
-    return response.text;
+    return responseText;
 }
 
 export async function generateStopSearchBriefing(
@@ -161,7 +161,7 @@ export async function generateStopSearchBriefing(
 **Main Incident Details:**
 - Type: ${type}
 - Date & Time: ${moment(datetime).format('YYYY-MM-DD HH:mm')}
-- Location: ${location.street.name}
+- Location: ${location.street?.name ?? 'Unknown Street'}
 - Object of Search: ${object_of_search || 'N/A'}
 - Outcome: ${outcome}
 
@@ -175,11 +175,11 @@ ${formattedNearbyCrimes.length > 0 ? `Nearby Crimes: ${JSON.stringify(formattedN
 
 **Analyst Briefing:**`;
 
-    const response = await callAIApi<{ text: string }>({
+    const responseText = await callAIApi({
         prompt: prompt,
         modelName: 'gemini-1.5-flash',
     });
-    return response.text;
+    return responseText;
 }
 
 
@@ -204,11 +204,11 @@ ${JSON.stringify(crimeDataForLLM, null, 2)}
 
 **Summary of Crime Trends:**`;
     
-    const response = await callAIApi<{ text: string }>({
+    const responseText = await callAIApi({
         prompt: prompt,
         modelName: 'gemini-1.5-flash',
     });
-    return response.text;
+    return responseText;
 }
 
 export async function generateCrimeInsights(crimes: Crime[]): Promise<Insight[]> {
@@ -231,12 +231,12 @@ ${JSON.stringify(crimeDataForLLM, null, 2)}
 
 JSON Output:`;
     
-    const response = await callAIApi<{ text: string }>({
+    const responseText = await callAIApi({
         prompt: prompt,
         modelName: 'gemini-1.5-flash',
         jsonResponse: true,
     });
-    return parseJsonResponse<Insight[]>(response.text);
+    return parseJsonResponse<Insight[]>(responseText);
 }
 
 
@@ -270,10 +270,10 @@ ${JSON.stringify(crimeDataForLLM, null, 2)}
 
 JSON Output:`;
 
-    const response = await callAIApi<{ text: string }>({
+    const responseText = await callAIApi({
         prompt: prompt,
         modelName: 'gemini-1.5-flash',
         jsonResponse: true,
     });
-    return parseJsonResponse<PredictiveHotspot[]>(response.text);
+    return parseJsonResponse<PredictiveHotspot[]>(responseText);
 }

@@ -47,7 +47,7 @@
 
 ## Project Quick Reference:
 *   **Project Root:** `c:\Users\me\Desktop\doncaster-crime-map\`
-*   **Frontend:** React, Vite, Tailwind CSS, Leaflet. Runs on `http://localhost:8080/` (needs `npm run dev` to start).
+*   **Frontend:** React, Vite, Tailwind CSS, Leaflet. Runs on `http://localhost:5173/` (needs `npm run dev` to start).
 *   **Backend:** Node.js/Express (`server.mjs`), Gemini API integration. Runs on `http://localhost:3001/` (managed by `pm2`).
 *   **Key Files:**
     *   `App.tsx`: Main React component.
@@ -58,7 +58,7 @@
     *   `package.json`: Project scripts and dependencies.
 *   **Common Commands:**
     *   `npm install`: Install dependencies.
-    *   `start /b npm run dev`: Start frontend (Vite) on port 8080 in the background.
+    *   `start /b npm run dev`: Start frontend (Vite) on port 5173 in the background.
     *   `npm run start:server`: Start backend only (on 3001).
     *   `pm2 status`: Check backend server status.
     *   `pm2 logs doncaster-crime-map-server`: View backend server logs.
@@ -66,7 +66,7 @@
     *   `taskkill /F /PID <PID>`: Kill a process by PID (Windows).
 
 ## Detailed Context & Considerations:
-*   **Frontend Port Conflict:** The `npm run dev` script now starts the frontend (Vite) on port 8080. If the frontend is already running, `npm run dev` might hang or fail due to port conflict. The `taskkill` command was used to resolve this.
+*   **Frontend Port Conflict:** The `npm run dev` script now starts the frontend (Vite) on port 5173. If the frontend is already running, `npm run dev` might hang or fail due to port conflict. The `taskkill` command was used to resolve this.
 *   **Backend Process Management:** `pm2` is now installed and used to manage the backend server (`server.mjs`). This ensures it runs reliably in the background. The backend server is now configured to run on port 3001.
 *   **`read_many_files` Tool Issue:** The `read_many_files` tool consistently failed, even with various attempts (absolute paths, relative paths, glob patterns, `useDefaultExcludes=False`). I had to resort to reading files one by one using `read_file`. This is a known limitation/bug in my current environment.
 *   **Sensitive Files:** `.env` and `.env.local` files contain sensitive API keys and should never be read or exposed. `package-lock.json` is typically large and not essential for understanding code logic.
@@ -76,7 +76,7 @@
 *   **Error Handling:** The `server.mjs` and `geminiService.ts` files include error handling for API calls and JSON parsing.
 *   **Frontend Routing:** The `App.tsx` seems to be a single-page application, with no explicit routing defined in the provided files.
 *   **Server Startup Reliability:** Initially, attempts to background the server using `&` in bash caused hangs. The solution was to install and utilize `pm2` (a Node.js process manager) to reliably start and manage the backend server in the background. The backend server is now configured to run on port 3001.
-*   **Agent Hanging Issue:** I repeatedly made the mistake of running `npm run dev` (an interactive command) without backgrounding it, causing myself to hang. I need to be more diligent in remembering to background interactive commands or use non-interactive alternatives. The correct way to run the frontend (Vite) in the background on Windows is `start /b npm run dev`. `pm2` is not suitable for managing the Vite development server.
+*   **Agent Hanging Issue:** I repeatedly made the mistake of running `npm run dev` (an interactive command) without backgrounding it, causing myself to hang. I need to be more diligent in remembering to background commands or use non-interactive alternatives. The correct way to run the frontend (Vite) in the background on Windows is `start /b npm run dev`. `pm2` is not suitable for managing the Vite development server.
 *   **Frontend Server Backgrounding (Windows):** The command `start /b npm run dev` successfully runs the Vite development server in the background on Windows without causing the agent to hang. This is the preferred method for backgrounding the frontend.
 *   **Memory Management Protocol:** The `gemini_memory.txt` file should *never* be overwritten. All updates to this file must be append-only to preserve historical context and learnings.
 *   **Development Environment:** Current development is being performed on a Windows laptop for testing purposes. Future deployment is planned for a VM on Google Cloud.
@@ -84,3 +84,6 @@
 *   **Desired Frontend Port:** The app page should always be run on port 80. (Note: This requires administrator privileges on Windows to bind to).
 *   **Laptop IP Address:** The current laptop's IP address for testing is `95.147.0.155`.
 *   **Frontend Port Change (to 8080):** The frontend port was changed from 5173 to 8080 to avoid conflict with the user's router/hub on port 80.
+*   **Git Commit Hash:** `cc56e41` (feat: Implement dark mode, configure frontend for phone testing on port 8080, and apply minor fixes.)
+*   **Hub Login Issue:** User is still unable to log in to their router/hub. This means direct port forwarding is currently not possible.
+*   **VM for Phone Testing:** Due to the hub login issue, the plan is to run the code in the Google Cloud VM for phone testing. The VM is set up, but the user will check it.

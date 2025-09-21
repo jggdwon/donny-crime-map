@@ -17,7 +17,7 @@ const ActionButton: React.FC<{ onClick?: () => void; children: React.ReactNode; 
     <button
         onClick={onClick}
         disabled={disabled}
-        className={`rounded-md p-2 px-3 font-semibold shadow-sm transition-all duration-150 inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+        className={`rounded-md p-2 px-3 font-semibold shadow-sm transition-all duration-150 inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm text-foreground bg-primary hover:bg-primary-focus disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
     >
         {children}
     </button>
@@ -221,28 +221,28 @@ const App: React.FC = () => {
     };
 
     return (
-        <div className="container mx-auto bg-gray-900 p-2 sm:p-4 rounded-lg shadow-2xl max-w-7xl">
+        <div className="container mx-auto bg-background text-foreground p-2 sm:p-4 rounded-lg shadow-2xl max-w-7xl">
             {/* Header */}
             <header className="flex flex-col sm:flex-row justify-between items-center mb-4">
                 <div className="flex items-center gap-2">
-                    <svg className="w-10 h-10 sm:w-12 sm:h-12 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg className="w-10 h-10 sm:w-12 sm:h-12 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                         <circle cx="12" cy="10" r="3"></circle>
                     </svg>
-                    <h1 className="text-xl sm:text-3xl font-bold text-gray-50">Doncaster Crime Activity</h1>
+                    <h1 className="text-2xl sm:text-4xl font-bold text-foreground">Doncaster Crime Activity</h1>
                 </div>
             </header>
 
             {/* Notification and Update */}
-            <div className="flex flex-col md:flex-row items-center justify-between mb-4 p-2 bg-gray-800 rounded-lg shadow-md">
-                <div className="font-semibold text-xs mb-2 md:mb-0 text-gray-300">{notification}</div>
+            <div className="flex flex-col md:flex-row items-center justify-between mb-4 p-2 bg-muted/20 rounded-lg shadow-md">
+                <div className="font-semibold text-xs mb-2 md:mb-0 text-foreground/80">{notification}</div>
                 <ActionButton onClick={fetchData} disabled={isLoading}>Update Now</ActionButton>
             </div>
             
             {/* Controls */}
             <div className="mb-4">
-                <label htmlFor="crimeCategoryFilter" className="block text-sm font-medium mb-1 text-gray-300">Filter by Crime Category:</label>
-                <select id="crimeCategoryFilter" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="block w-full pl-3 pr-10 py-2 text-base border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-gray-700 text-gray-50 shadow-sm">
+                <label htmlFor="crimeCategoryFilter" className="block text-sm font-medium mb-1 text-foreground/80">Filter by Crime Category:</label>
+                <select id="crimeCategoryFilter" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="block w-full pl-3 pr-10 py-2 text-base border-muted focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md bg-muted text-foreground shadow-sm">
                     <option value="all">All Categories</option>
                     {crimeCategories.map(cat => <option key={cat.url} value={cat.url}>{cat.name}</option>)}
                 </select>
@@ -287,21 +287,21 @@ const App: React.FC = () => {
 
             {/* Crime List */}
             <CollapsibleSection title="Recent Crime Incidents">
-                <div className="overflow-x-auto rounded-lg shadow-md">
-                    <table className="min-w-full divide-y divide-gray-700 text-sm">
-                        <thead className="bg-gray-800">
+                <div className="overflow-x-auto rounded-lg shadow-md border border-muted/20">
+                    <table className="min-w-full divide-y divide-muted/20 text-sm">
+                        <thead className="bg-muted/20">
                             <tr>
-                                <th onClick={() => handleCrimeSort('month')} className="cursor-pointer p-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Date {crimeSortConfig.key === 'month' && (crimeSortConfig.direction === 'asc' ? '▲' : '▼')}</th>
-                                <th onClick={() => handleCrimeSort('category')} className="cursor-pointer p-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Type {crimeSortConfig.key === 'category' && (crimeSortConfig.direction === 'asc' ? '▲' : '▼')}</th>
+                                <th onClick={() => handleCrimeSort('month')} className="cursor-pointer p-3 text-left text-xs font-medium text-foreground/80 uppercase tracking-wider">Date {crimeSortConfig.key === 'month' && (crimeSortConfig.direction === 'asc' ? '▲' : '▼')}</th>
+                                <th onClick={() => handleCrimeSort('category')} className="cursor-pointer p-3 text-left text-xs font-medium text-foreground/80 uppercase tracking-wider">Type {crimeSortConfig.key === 'category' && (crimeSortConfig.direction === 'asc' ? '▲' : '▼')}</th>
                             </tr>
                         </thead>
-                        <tbody className="bg-gray-900 divide-y divide-gray-700">
+                        <tbody className="bg-background divide-y divide-muted/20">
                             {sortedCrimes.map(crime => {
                                 const crimeId = crime.persistent_id || String(crime.id);
                                 return (
                                     <tr 
                                         key={crimeId} 
-                                        className={`hover:bg-gray-800 cursor-pointer ${(selectedCrimeId === crimeId) ? 'table-row-highlighted' : ''}`}
+                                        className={`hover:bg-muted/20 cursor-pointer ${(selectedCrimeId === crimeId) ? 'table-row-highlighted' : ''}`}
                                         onClick={() => handleItemSelection('crime', crime)}
                                     >
                                         <td className="p-3 whitespace-nowrap">{moment(crime.month).format("MMMM YYYY")}</td>
@@ -316,26 +316,26 @@ const App: React.FC = () => {
 
             {/* Stop & Search List */}
             <CollapsibleSection title="Recent Stop & Search Incidents">
-                <div className="overflow-x-auto rounded-lg shadow-md">
-                    <table className="min-w-full divide-y divide-gray-700 text-sm">
-                         <thead className="bg-gray-800">
+                <div className="overflow-x-auto rounded-lg shadow-md border border-muted/20">
+                    <table className="min-w-full divide-y divide-muted/20 text-sm">
+                         <thead className="bg-muted/20">
                             <tr>
                                 {stopSearchHeaders.map(header => (
                                     <th 
                                         key={header.key} 
                                         onClick={() => handleStopSearchSort(header.key)}
-                                        className="cursor-pointer p-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider"
+                                        className="cursor-pointer p-3 text-left text-xs font-medium text-foreground/80 uppercase tracking-wider"
                                     >
                                         {header.label} {stopSearchSortConfig.key === header.key && (stopSearchSortConfig.direction === 'asc' ? '▲' : '▼')}
                                     </th>
                                 ))}
                             </tr>
                         </thead>
-                        <tbody className="bg-gray-900 divide-y divide-gray-700">
+                        <tbody className="bg-background divide-y divide-muted/20">
                             {sortedStopSearches.slice(0, 50).map((event, i) => (
                                 <tr 
                                     key={`${event.datetime}-${i}`}
-                                    className="hover:bg-gray-800 cursor-pointer" 
+                                    className="hover:bg-muted/20 cursor-pointer" 
                                     onClick={() => handleItemSelection('stopSearch', event)}
                                 >
                                     <td className="p-3 whitespace-nowrap">{moment(event.datetime).format('YYYY-MM-DD HH:mm')}</td>
