@@ -74,6 +74,14 @@ let DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
+const getCrimeVisuals = (crimeDate: string) => {
+  const daysOld = moment().diff(moment(crimeDate), 'days');
+  if (daysOld <= 7) return { color: 'rgb(255,0,0)', size: 28 };
+  if (daysOld <= 30) return { color: 'rgb(255,165,0)', size: 24 };
+  if (daysOld <= 90) return { color: 'rgb(255,255,0)', size: 20 };
+  return { color: 'rgb(0,255,0)', size: 16 };
+};
+
 
 interface CrimeMapProps {
   crimes: Crime[];
@@ -88,7 +96,7 @@ interface CrimeMapProps {
   selectedCrimeId: string | null;
   selectedStopSearch: StopSearch | null;
   allCrimes: Crime[];
-  allStopSearches: any[];
+  allStopSearches: StopSearch[];
 }
 
 const CrimeMap: React.FC<CrimeMapProps> = ({
@@ -118,14 +126,6 @@ const CrimeMap: React.FC<CrimeMapProps> = ({
   const briefingCacheRef = useRef<Map<string, string>>(new Map());
   const briefingLoadingRef = useRef<Set<string>>(new Set());
 
-  const getCrimeVisuals = (crimeDate: string) => {
-    const daysOld = moment().diff(moment(crimeDate), 'days');
-    if (daysOld <= 7) return { color: 'rgb(255,0,0)', size: 28 };
-    if (daysOld <= 30) return { color: 'rgb(255,165,0)', size: 24 };
-    if (daysOld <= 90) return { color: 'rgb(255,255,0)', size: 20 };
-    return { color: 'rgb(0,255,0)', size: 16 };
-  };
-  
   // Initialize map
   useEffect(() => {
     if (mapRef.current || !mapContainerRef.current) return;

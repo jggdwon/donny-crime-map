@@ -38,39 +38,21 @@ export async function fetchCrimeCategories(): Promise<CrimeCategory[]> {
 }
 
 export async function fetchCrimeData(dates: string[]): Promise<Crime[]> {
-    let combinedCrimes: Crime[] = [];
-    for (const date of dates) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/crimes-street/all-crime?lat=${DONCASTER_LAT}&lng=${DONCASTER_LNG}&date=${date}`);
-            if (!response.ok) {
-                console.warn(`Server error (${response.status}) fetching crime data for ${date}. Skipping.`);
-                continue;
-            }
-            const data: Crime[] = await response.json();
-            combinedCrimes = combinedCrimes.concat(data);
-        } catch (error) {
-            console.error(`Error fetching crime data for ${date}:`, error);
-        }
-    }
-    return combinedCrimes
-        .filter(crime => crime.location?.latitude && crime.location?.longitude)
-        .sort((a, b) => moment(b.month).diff(moment(a.month)));
+    const promises = dates.map(date =>
+        fetch(`${API_BASE_URL}/crimes-street/all-crime?lat=${DONCASTER_LAT}&lng=${DONCASTER_LNG}&date=${date}`)
+            .then(res => res.ok ? res.json() : (console.warn(`Failed to fetch crime data for ${date}`), []))
+            .catch(err => (console.error(`Error fetching crime data for ${date}:`, err), []))
+    );
+    const results = await Promise.all(promises);
+    return results.flat().filter(crime => crime.location?.latitude && crime.location?.longitude);
 }
 
 export async function fetchStopAndSearchData(dates: string[]): Promise<StopSearch[]> {
-    let combinedStopSearches: StopSearch[] = [];
-    for (const date of dates) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/stops-street?lat=${DONCASTER_LAT}&lng=${DONCASTER_LNG}&date=${date}`);
-            if (!response.ok) {
-                 console.warn(`Server error (${response.status}) fetching stop/search data for ${date}. Skipping.`);
-                 continue;
-            }
-            const data: StopSearch[] = await response.json();
-            combinedStopSearches = combinedStopSearches.concat(data);
-        } catch (error) {
-            console.error(`Error fetching stop and search data for ${date}:`, error);
-        }
-    }
-    return combinedStopSearches.sort((a, b) => moment(b.datetime).diff(moment(a.datetime)));
+    const promises = dates.map(date =>
+        fetch(`${API_BASE_URL}/stops-street?lat=${DONCASTER_LAT}&lng=${DONCASTER_LNG}&date=${date}`)
+            .then(res => res.ok ? res.json() : (console.warn(`Failed to fetch stop/search data for ${date}`), []))
+            .catch(err => (console.error(`Error fetching stop/search data for ${date}:`, err), []))
+    );
+    const results = await Promise.all(promises);
+    return results.flat();
 }

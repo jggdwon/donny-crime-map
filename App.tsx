@@ -50,6 +50,17 @@ function modalReducer(state: typeof initialModalState, action: ModalAction) {
     }
 }
 
+const stopSearchHeaders = [
+    { label: 'Date', key: 'datetime' },
+    { label: 'Type', key: 'type' },
+    { label: 'Object', key: 'object_of_search' },
+    { label: 'Gender', key: 'gender' },
+    { label: 'Age', key: 'age_range' },
+    { label: 'Ethnicity', key: 'self_defined_ethnicity' },
+    { label: 'Outcome', key: 'outcome' },
+    { label: 'Street', key: 'location.street.name' },
+];
+
 const App: React.FC = () => {
     const [allCrimes, setAllCrimes] = useState<Crime[]>([]);
     const [filteredCrimes, setFilteredCrimes] = useState<Crime[]>([]);
@@ -92,6 +103,15 @@ const App: React.FC = () => {
         }
     }, []);
 
+    // Fetch static categories once on component mount
+    useEffect(() => {
+        const getCategories = async () => {
+            const categories = await policeApi.fetchCrimeCategories();
+            setCrimeCategories(categories);
+        };
+        getCategories();
+    }, []);
+
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         setNotification('Fetching latest data...');
@@ -102,20 +122,16 @@ const App: React.FC = () => {
             return;
         }
 
-        const [crimes, stopSearches, categories] = await Promise.all([
+        const [crimes, stopSearches] = await Promise.all([
             policeApi.fetchCrimeData(dates),
-            policeApi.fetchStopAndSearchData(dates),
-            policeApi.fetchCrimeCategories()
+            policeApi.fetchStopAndSearchData(dates)
         ]);
 
         setAllCrimes(crimes);
         setAllStopSearches(stopSearches);
-        if (crimeCategories.length === 0) { // Only set categories once
-            setCrimeCategories(categories);
-        }
         setNotification(`Updated! Data from ${moment(dates[dates.length - 1]).format('MMMM YYYY')} to ${moment(dates[0]).format('MMMM YYYY')}.`);
         setIsLoading(false);
-    }, [crimeCategories.length]);
+    }, []);
 
     useEffect(() => {
         fetchData();
@@ -205,18 +221,6 @@ const App: React.FC = () => {
     const handleStopSearchSort = (key: string) => {
         setStopSearchSortConfig(prev => ({ key, direction: prev.key === key && prev.direction === 'desc' ? 'asc' : 'desc' }));
     };
-
-    const stopSearchHeaders = [
-        { label: 'Date', key: 'datetime' },
-        { label: 'Type', key: 'type' },
-        { label: 'Object', key: 'object_of_search' },
-        { label: 'Gender', key: 'gender' },
-        { label: 'Age', key: 'age_range' },
-        { label: 'Ethnicity', key: 'self_defined_ethnicity' },
-        { label: 'Outcome', key: 'outcome' },
-        { label: 'Street', key: 'location.street.name' },
-    ];
-
 
     return (
         <div className="container mx-auto bg-[#161B22] p-2 sm:p-2.5 md:p-3 rounded-lg shadow-[0_0_15px_rgba(0,0,0,0.8),_0_0_5px_var(--accent-primary),_inset_0_0_0_2px_var(--accent-primary),_inset_0_0_0_4px_var(--border-color),_inset_0_0_0_6px_var(--bg-dark)] border-4 border-solid border-[#FFD700] max-w-7xl">
