@@ -13,6 +13,17 @@ const getNestedValue = (obj: any, path: string): any => {
     return path.split('.').reduce((acc, part) => acc && acc[part], obj);
 };
 
+const MilitaryButton: React.FC<{ onClick?: () => void; children: React.ReactNode; disabled?: boolean; className?: string }> = ({ onClick, children, disabled, className }) => (
+    <button
+        onClick={onClick}
+        disabled={disabled}
+        className={`rounded-[0.15rem] p-2 px-3.5 font-bold uppercase tracking-wider shadow-[1.5px_1.5px_3px_rgba(0,0,0,0.5),_0_0_2px_var(--accent-primary)] transition-all duration-150 border-2 border-solid border-[#FFD700] inline-flex items-center justify-center gap-1.5 text-sm text-[#FFD700] bg-gradient-to-b from-[#21262D] to-[#161B22] hover:from-[#161B22] hover:to-[#21262D] hover:shadow-[1px_1px_1.5px_rgba(0,0,0,0.3),_0_0_4px_var(--accent-primary)] hover:brightness-125 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+        style={{ textShadow: '0.5px 0.5px 1px rgba(0,0,0,0.5), 0 0 1px var(--accent-primary)' }}
+    >
+        {children}
+    </button>
+);
+
 const App: React.FC = () => {
     const [allCrimes, setAllCrimes] = useState<Crime[]>([]);
     const [filteredCrimes, setFilteredCrimes] = useState<Crime[]>([]);
@@ -148,17 +159,6 @@ const App: React.FC = () => {
     }, [allCrimes]);
     
     const closeModal = () => setModalState({ briefing: false, trend: false, insights: false, predictive: false });
-
-    const MilitaryButton: React.FC<{ onClick?: () => void; children: React.ReactNode; disabled?: boolean; className?: string }> = ({ onClick, children, disabled, className }) => (
-        <button
-            onClick={onClick}
-            disabled={disabled}
-            className={`rounded-[0.15rem] p-2 px-3.5 font-bold uppercase tracking-wider shadow-[1.5px_1.5px_3px_rgba(0,0,0,0.5),_0_0_2px_var(--accent-primary)] transition-all duration-150 border-2 border-solid border-[#FFD700] inline-flex items-center justify-center gap-1.5 text-sm text-[#FFD700] bg-gradient-to-b from-[#21262D] to-[#161B22] hover:from-[#161B22] hover:to-[#21262D] hover:shadow-[1px_1px_1.5px_rgba(0,0,0,0.3),_0_0_4px_var(--accent-primary)] hover:brightness-125 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
-            style={{ textShadow: '0.5px 0.5px 1px rgba(0,0,0,0.5), 0 0 1px var(--accent-primary)' }}
-        >
-            {children}
-        </button>
-    );
 
     const sortedCrimes = useMemo(() => {
         return [...filteredCrimes].sort((a, b) => {

@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"vite\" \"npm run start:server\"",
     "build": "vite build",
     "preview": "vite preview",
     "start:server": "node -r dotenv/config server.mjs"
@@ -19,7 +19,7 @@
     "leaflet.markercluster": "^1.5.3",
     "moment": "^2.30.1",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
@@ -27,6 +27,7 @@
     "@types/leaflet.markercluster": "^1.5.4",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+    "concurrently": "^8.2.2",
     "typescript": "~5.7.2",
     "vite": "^6.2.0"
   }
