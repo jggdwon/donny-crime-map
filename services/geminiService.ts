@@ -1,16 +1,28 @@
-
-import { GoogleGenAI } from "@google/genai";
 import { Crime, StopSearch, Insight, PredictiveHotspot } from '../types';
 import moment from 'moment';
 
-// Safely access the API key without crashing if process.env is not defined
-const API_KEY = (globalThis as any).process?.env?.API_KEY;
+// The backend server URL. When running locally, it's localhost.
+// In production on the VM, Nginx will proxy requests from the same host,
+// so we can use a relative path.
+const API_BASE_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
 
-// Conditionally initialize the AI client
-const ai = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
+async function callAIApi<T>(body: object): Promise<T> {
+    const response = await fetch(`${API_BASE_URL}/api/generate`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+    });
 
-if (!ai) {
-  console.warn("Gemini AI service is not configured. API_KEY is missing from environment variables. AI features will be disabled.");
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to call AI API');
+    }
+
+    const data = await response.json();
+    // The actual AI response text is nested inside the 'text' property
+    return data as T;
 }
 
 function parseJsonResponse<T,>(text: string): T {
@@ -42,8 +54,6 @@ export async function generateIncidentBriefing(
     allCrimes: Crime[], 
     allStopSearches: StopSearch[]
 ): Promise<string> {
-    if (!ai) return Promise.resolve("AI service is not available (API key missing).");
-
     const { category, month, location } = crime;
     const crimeLat = parseFloat(location.latitude);
     const crimeLng = parseFloat(location.longitude);
@@ -103,9 +113,9 @@ ${nearbyStopSearches.length > 0 ? `Nearby Stop & Searches: ${JSON.stringify(near
 
 **Incident Briefing:**`;
 
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-preview-04-17',
-        contents: prompt,
+    const response = await callAIApi<{ text: string }>({
+        prompt: prompt,
+        modelName: 'gemini-1.5-flash',
     });
     return response.text;
 }
@@ -115,7 +125,6 @@ export async function generateStopSearchBriefing(
     allCrimes: Crime[], 
     allStopSearches: StopSearch[]
 ): Promise<string> {
-    if (!ai) return Promise.resolve("AI service is not available (API key missing).");
     const { datetime, location, outcome, object_of_search, type } = stopSearch;
     if (!location) return "Briefing not available: no location data for this incident.";
 
@@ -161,16 +170,15 @@ ${nearbyCrimes.length > 0 ? `Nearby Crimes: ${JSON.stringify(nearbyCrimes.slice(
 
 **Analyst Briefing:**`;
 
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-preview-04-17',
-        contents: prompt,
+    const response = await callAIApi<{ text: string }>({
+        prompt: prompt,
+        modelName: 'gemini-1.5-flash',
     });
     return response.text;
 }
 
 
 export async function summarizeCrimeTrends(crimes: Crime[]): Promise<string> {
-    if (!ai) return Promise.resolve("AI service is not available (API key missing).");
     if (crimes.length === 0) {
         return "No crime data available to summarize.";
     }
@@ -191,15 +199,14 @@ ${JSON.stringify(crimeDataForLLM, null, 2)}
 
 **Summary of Crime Trends:**`;
     
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-preview-04-17',
-        contents: prompt,
+    const response = await callAIApi<{ text: string }>({
+        prompt: prompt,
+        modelName: 'gemini-1.5-flash',
     });
     return response.text;
 }
 
 export async function generateCrimeInsights(crimes: Crime[]): Promise<Insight[]> {
-    if (!ai) return Promise.resolve([]);
     if (crimes.length === 0) return [];
 
     const crimeDataForLLM = crimes.slice(0, 200).map(crime => ({
@@ -219,18 +226,16 @@ ${JSON.stringify(crimeDataForLLM, null, 2)}
 
 JSON Output:`;
     
-    const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash-preview-04-17",
-        contents: prompt,
-        config: { responseMimeType: "application/json" }
+    const response = await callAIApi<{ text: string }>({
+        prompt: prompt,
+        modelName: 'gemini-1.5-flash',
+        jsonResponse: true,
     });
-    
     return parseJsonResponse<Insight[]>(response.text);
 }
 
 
 export async function generatePredictiveHotspots(crimes: Crime[]): Promise<PredictiveHotspot[]> {
-    if (!ai) return Promise.resolve([]);
     if (crimes.length < 10) return [];
 
     const crimeDataForLLM = crimes.map(crime => ({
@@ -260,11 +265,10 @@ ${JSON.stringify(crimeDataForLLM, null, 2)}
 
 JSON Output:`;
 
-    const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash-preview-04-17",
-        contents: prompt,
-        config: { responseMimeType: "application/json" }
+    const response = await callAIApi<{ text: string }>({
+        prompt: prompt,
+        modelName: 'gemini-1.5-flash',
+        jsonResponse: true,
     });
-
     return parseJsonResponse<PredictiveHotspot[]>(response.text);
 }
