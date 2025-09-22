@@ -3,39 +3,39 @@
 @tailwind utilities;
 
 :root {
-  --background: #24273a;
-  --foreground: #cad3f5;
-  --primary: #c6a0f6;
-  --primary-focus: #b7bdf8;
-  --secondary: #eed49f;
-  --muted: #363a4f;
-  --error: #ed8796;
-  --predictive-hotspot: #f5a97f;
-  --accent-primary: #eed49f;
-  --text-light: #cad3f5;
-  --border-color: #494d64;
-  --accent-secondary: #8bd5ca;
+  --background: #1C1C1E; /* Very dark gray, almost black */
+  --foreground: #FFFFFF; /* White */
+  --primary: #0A84FF; /* Vibrant blue */
+  --primary-focus: #3D99FF; /* Slightly lighter blue for focus */
+  --secondary: #E0E0E0; /* Light gray */
+  --muted: #3A3A3C; /* Darker gray for muted elements */
+  --error: #FF3B30; /* Red for errors */
+  --predictive-hotspot: #FF9500; /* Orange for predictive hotspot */
+  --accent-primary: #0A84FF; /* Vibrant blue */
+  --text-light: #FFFFFF; /* White */
+  --border-color: #3A3A3C; /* Darker gray for borders */
+  --accent-secondary: #5AC8FA; /* Light blue */
 }
 
 [data-theme='light'] {
-  --background: #eff1f5;
-  --foreground: #4c4f69;
-  --primary: #8839ef;
-  --primary-focus: #7287fd;
-  --secondary: #df8e1d;
-  --muted: #ccd0da;
-  --error: #d20f39;
-  --predictive-hotspot: #fe640b;
-  --accent-primary: #df8e1d;
-  --text-light: #4c4f69;
-  --border-color: #bcc0cc;
-  --accent-secondary: #179299;
+  --background: #FFFFFF; /* White */
+  --foreground: #000000; /* Black */
+  --primary: #0A84FF; /* Vibrant blue */
+  --primary-focus: #3D99FF; /* Slightly lighter blue for focus */
+  --secondary: #E0E0E0; /* Light gray */
+  --muted: #E5E5EA; /* Light gray for muted elements */
+  --error: #FF3B30; /* Red for errors */
+  --predictive-hotspot: #FF9500; /* Orange for predictive hotspot */
+  --accent-primary: #0A84FF; /* Vibrant blue */
+  --text-light: #000000; /* Black */
+  --border-color: #C7C7CC; /* Light gray for borders */
+  --accent-secondary: #5AC8FA; /* Light blue */
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-family: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 }
 
 #root {
@@ -105,13 +105,20 @@ body {
 }
 
 .leaflet-popup-content-wrapper {
-  background-color: var(--background);
+  background-color: rgba(28, 28, 30, 0.7); /* Dark mode background with transparency */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px); /* For Safari support */
   color: var(--foreground);
   border-radius: 0.5rem;
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   border: 1px solid var(--border-color);
   padding: 0.5rem;
   line-height: 1.1;
+}
+
+/* For light mode, the background color needs to be adjusted */
+[data-theme='light'] .leaflet-popup-content-wrapper {
+  background-color: rgba(255, 255, 255, 0.7); /* Light mode background with transparency */
 }
 
 .leaflet-popup-content {
@@ -130,7 +137,13 @@ body {
 }
 
 .leaflet-popup-tip {
-  background-color: var(--background);
+  background-color: rgba(28, 28, 30, 0.7); /* Dark mode background with transparency */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px); /* For Safari support */
+}
+
+[data-theme='light'] .leaflet-popup-tip {
+  background-color: rgba(255, 255, 255, 0.7); /* Light mode background with transparency */
 }
 
 .leaflet-popup-close-button {

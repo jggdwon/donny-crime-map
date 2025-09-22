@@ -130,7 +130,7 @@ index.html         package-lock.json  services
 - **2025-09-22 - Session Summary & Code Review:**
     *   **Bug Fixes & UI Overhaul:**
         *   Fixed a critical bug in `services/geminiService.ts` that caused AI features like "Insights" and "Predictive Hotspots" to fail due to a JSON parsing error.
-        *   Implemented a new,. modern UI theme (Catppuccin) for both dark and light modes by overhauling `index.css`. This resolved color contrast issues in popups and improved the overall aesthetic.
+        *   Implemented a new, modern UI theme (Catppuccin) for both dark and light modes by overhauling `index.css`. This resolved color contrast issues in popups and improved the overall aesthetic.
         *   Refactored the CSS by removing all styles from `index.html` and consolidating them into `index.css`, improving maintainability.
         *   Corrected the `dev` script in `package.json` to use `concurrently`, allowing both the frontend and backend to run simultaneously with a single command as intended.
     *   **Code Review Findings & Recommendations:**
@@ -138,3 +138,7 @@ index.html         package-lock.json  services
         *   **Error Handling:** The error handling in `services/policeApi.ts` is silent. It would be more user-friendly to display a notification to the user when API calls fail to fetch data.
         *   **Accessibility:** The `Modal.tsx` component can be made more accessible by implementing focus trapping and allowing it to be closed with the "Escape" key.
 - **2025-09-22 - Switched to VM:** We are now running the project on the Google Cloud VM, not the local Windows machine.
+- **2025-09-22 - SSH Key Generated:** User generated an SSH key pair. The public key is saved in `KEYS.txt`.
+- **2025-09-22 - VM Reboot Initiated:** User is rebooting the Google Cloud VM 'bus-tracker-vm'.
+- **2025-09-22 - gcloud CLI Available:** User has the 'gcloud' command-line tool available for interacting with Google Cloud.
+- **2025-09-22 - VM IP Address Changed:** The external IP address of the VM 'bus-tracker-vm' has changed to `34.59.207.1` after reboot.
