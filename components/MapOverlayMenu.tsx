@@ -83,15 +83,15 @@ const MapOverlayMenu: React.FC<MapOverlayMenuProps> = ({
     const [isOpen, setIsOpen] = useState(false);
 
     return (
-        <div className="fixed top-4 left-4 z-10">
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[2001]">
             <button 
                 onClick={() => setIsOpen(!isOpen)}
-                className="bg-primary text-foreground p-3 rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-75"
+                className="bg-primary/80 backdrop-blur-sm text-foreground p-3 rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-75"
             >
                 {isOpen ? '✕' : '☰'}
             </button>
 
-            <div className={`absolute top-0 left-0 bg-background/90 backdrop-blur-md p-4 rounded-lg shadow-xl transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} w-80 max-h-[90vh] overflow-y-auto`}>
+            <div className={`absolute top-0 left-0 bg-background/90 backdrop-blur-md p-4 rounded-lg shadow-xl transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} w-80 max-h-[90vh] overflow-y-auto z-[2001]`}>
                 {/* Notification and Update */}
                 <div className="flex flex-col items-center justify-between mb-4 p-2 bg-muted/20 rounded-lg shadow-md">
                     <div className="font-semibold text-xs mb-2 text-foreground/80">{notification}</div>
