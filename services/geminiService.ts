@@ -26,21 +26,6 @@ async function callAIApi(body: object): Promise<any> {
     return data;
 }
 
-function parseJsonResponse<T,>(text: string): T {
-    let jsonStr = text.trim();
-    const fenceRegex = /^```(\w*)?\s*\n?(.*?)\n?\s*```$/s;
-    const match = jsonStr.match(fenceRegex);
-    if (match && match[2]) {
-      jsonStr = match[2].trim();
-    }
-    try {
-      return JSON.parse(jsonStr) as T;
-    } catch (e) {
-      console.error("Failed to parse JSON response:", e, "Raw text:", text);
-      throw new Error("Failed to parse AI response as JSON.");
-    }
-}
-
 const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
     const R = 6371; // Radius of Earth in kilometers
     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -237,7 +222,7 @@ JSON Output:`;
         modelName: 'gemini-1.5-flash',
         jsonResponse: true,
     });
-    return parseJsonResponse<Insight[]>(JSON.stringify(responseData.json));
+    return responseData.json || [];
 }
 
 
@@ -276,5 +261,5 @@ JSON Output:`;
         modelName: 'gemini-1.5-flash',
         jsonResponse: true,
     });
-    return parseJsonResponse<PredictiveHotspot[]>(JSON.stringify(responseData.json));
+    return responseData.json || [];
 }

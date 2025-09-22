@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo, useReducer } from 'react';
 import { Crime, StopSearch, CrimeCategory, Insight, PredictiveHotspot, ModalState, SortConfig } from './types';
 import * as policeApi from './services/policeApi';
@@ -7,6 +6,7 @@ import CrimeMap from './components/CrimeMap';
 import Modal from './components/Modal';
 import CollapsibleSection from './components/CollapsibleSection';
 import moment from 'moment';
+import { stopSearchHeaders } from './constants';
 
 const getNestedValue = (obj: any, path: string): any => {
     if (!path) return obj;
@@ -49,18 +49,25 @@ function modalReducer(state: typeof initialModalState, action: ModalAction) {
     }
 }
 
-const stopSearchHeaders = [
-    { label: 'Date', key: 'datetime' },
-    { label: 'Type', key: 'type' },
-    { label: 'Object', key: 'object_of_search' },
-    { label: 'Gender', key: 'gender' },
-    { label: 'Age', key: 'age_range' },
-    { label: 'Ethnicity', key: 'self_defined_ethnicity' },
-    { label: 'Outcome', key: 'outcome' },
-    { label: 'Street', key: 'location.street.name' },
-];
-
 const App: React.FC = () => {
+    const [theme, setTheme] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) return savedTheme;
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        return 'dark'; // Default to dark if window is not defined (e.g., SSR)
+    });
+
+    useEffect(() => {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+    }, [theme]);
+
+    const toggleTheme = () => {
+        setTheme(prevTheme => (prevTheme === 'dark' ? 'light' : 'dark'));
+    };
+
     const [allCrimes, setAllCrimes] = useState<Crime[]>([]);
     const [filteredCrimes, setFilteredCrimes] = useState<Crime[]>([]);
     const [allStopSearches, setAllStopSearches] = useState<StopSearch[]>([]);
@@ -231,6 +238,9 @@ const App: React.FC = () => {
                     </svg>
                     <h1 className="text-2xl sm:text-4xl font-bold text-foreground">Doncaster Crime Activity</h1>
                 </div>
+                <ActionButton onClick={toggleTheme} className="mt-2 sm:mt-0">
+                    {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
+                </ActionButton>
             </header>
 
             {/* Notification and Update */}

@@ -143,7 +143,8 @@ const CrimeMap: React.FC<CrimeMapProps> = ({
         center: [53.522820, -1.128462],
         zoom: 13,
         layers: [satelliteLayer], // Default to satellite view
-        attributionControl: false
+        attributionControl: false,
+        zoomControl: false // Remove zoom control buttons
     });
     mapRef.current = map;
     

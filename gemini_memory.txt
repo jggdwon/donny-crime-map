@@ -59,7 +59,6 @@
 *   **Common Commands:**
     *   `npm install`: Install dependencies.
     *   `start /b npm run dev`: Start frontend (Vite) on port 8080 in the background.
-    *   `npm run start:server`: Start backend only (on 3001).
     *   `pm2 status`: Check backend server status.
     *   `pm2 logs doncaster-crime-map-server`: View backend server logs.
     *   `pm2 stop doncaster-crime-map-server`: Stop backend server.
@@ -72,11 +71,11 @@
 *   **Sensitive Files:** `.env` and `.env.local` files contain sensitive API keys and should never be read or exposed. `package-lock.json` is typically large and not essential for understanding code logic.
 *   **AI API Rate Limits:** Be mindful of potential rate limits when interacting with the Gemini API. The `geminiService.ts` file handles calls to `/api/generate`.
 *   **Police API Data:** The `policeApi.ts` fetches data for Doncaster. The `getAvailableCrimeDates` function fetches the 6 most recent months of data.
-*   **UI/UX Design Document:** `web-design.txt` contains a detailed report on modern web design trends. This could be a valuable resource for any UI/UX related tasks.
-*   **Error Handling:** The `server.mjs` and `geminiService.ts` files include error handling for API calls and JSON parsing.
+*   **UI/UX Design Document:** `web-design.txt` contains a detailed report on modern web design trends, which might be relevant for future UI/UX tasks.
+*   **Error Handling:** The `server.mjs` and `services/geminiService.ts` files include error handling for API calls and JSON parsing.
 *   **Frontend Routing:** The `App.tsx` seems to be a single-page application, with no explicit routing defined in the provided files.
 *   **Server Startup Reliability:** Initially, attempts to background the server using `&` in bash caused hangs. The solution was to install and utilize `pm2` (a Node.js process manager) to reliably start and manage the backend server in the background. The backend server is now configured to run on port 3001.
-*   **Agent Hanging Issue:** I repeatedly made the mistake of running `npm run dev` (an interactive command) without backgrounding it, causing myself to hang. I need to be more diligent in remembering to background interactive commands or use non-interactive alternatives. The correct way to run the frontend (Vite) in the background on Windows is `start /b npm run dev`. `pm2` is not suitable for managing the Vite development server.
+*   **Agent Hanging Issue:** I repeatedly made the mistake of running `npm run dev` (interactive command) without backgrounding it, causing myself to hang. I need to be more diligent in remembering to background interactive commands or use non-interactive alternatives. The correct way to run the frontend (Vite) in the background on Windows is `start /b npm run dev`. `pm2` is not suitable for managing the Vite development server.
 *   **Frontend Server Backgrounding (Windows):** The command `start /b npm run dev` successfully runs the Vite development server in the background on Windows without causing the agent to hang. This is the preferred method for backgrounding the frontend.
 *   **Memory Management Protocol:** The `gemini_memory.txt` file should *never* be overwritten. All updates to this file must be append-only to preserve historical context and learnings.
 *   **Development Environment:** Current development is being performed on a Windows laptop for testing purposes. Future deployment is planned for a VM on Google Cloud.
@@ -101,3 +100,40 @@
 - **Frontend Port Change (to 80):** The frontend port has been changed to 80.
 - **PM2 App Name Correction:** The PM2 app name for the backend is `crime-map-api`, not `doncaster-crime-map-server`.
 - **Current Focus:** We are developing on a Windows laptop, with plans to deploy and test on a Google Cloud VM. Our primary goal is to ensure the code functions correctly and displays optimally on mobile devices.
+
+- **VM Project Directory Listing (2025-09-21):**
+```
+App.tsx            index.tsx          package.json       tailwind.config.js
+README.md          manifest.json      postcss.config.js  tsconfig.json
+components         metadata.json      server.log         types.ts
+gemini_memory.txt  node_modules       server.mjs         vite.config.ts
+index.css          nohup.out          service-worker.js  web-design.txt
+index.html         package-lock.json  services
+```
+
+- **Recent Actions & VM Setup (2025-09-21):**
+    *   Performed a code review, addressing potential bugs and VM readiness.
+    *   Fixed `API_BASE_URL` in `services/geminiService.ts` to correctly point to `localhost:3001` for local development and use a relative path for VM production.
+    *   Removed redundant `@google/genai` dependency from `package.json`.
+    *   Added `KEYS.txt` to `.gitignore` to prevent sensitive data from being committed.
+    *   Proposed a Git workflow for VM updates: create `vm-update-branch`, commit changes, push to remote, then `git clone`, `git checkout vm-update-branch`, `npm install`, configure `GEMINI_API_KEY` on VM, restart PM2, build frontend, and restart Nginx.
+    *   Confirmed project directory on VM is `~/donny-crime-map` based on user's `dir` output.
+
+- **2025-09-21 14:30:00 - Session Summary & Future Protocol:**
+    *   **New Protocol:** All future amendments to this memory file will be prepended with the current date and time.
+    *   **Code Review & Fixes:** Completed a code review, fixed `API_BASE_URL` in `services/geminiService.ts` for better local/VM compatibility, removed redundant `@google/genai` dependency from `package.json`, and added `KEYS.txt` to `.gitignore`.
+    *   **Git Workflow for VM:** Created and pushed `vm-update-branch` to the remote repository. This branch contains all recent changes.
+    *   **VM Deployment Clarification:** Confirmed that `KEYS.txt` is for local agent reference only and its contents (e.g., `GEMINI_API_KEY`) must be manually configured as environment variables on the VM.
+    *   **VM Update Procedure:** Provided detailed steps for cleaning the VM project directory, cloning the repository, checking out `vm-update-branch`, installing dependencies, configuring environment variables, and restarting services.
+    *   **VM Project Directory:** Confirmed the project directory on the VM is `~/donny-crime-map`.
+
+- **2025-09-22 - Session Summary & Code Review:**
+    *   **Bug Fixes & UI Overhaul:**
+        *   Fixed a critical bug in `services/geminiService.ts` that caused AI features like "Insights" and "Predictive Hotspots" to fail due to a JSON parsing error.
+        *   Implemented a new, modern UI theme (Catppuccin) for both dark and light modes by overhauling `index.css`. This resolved color contrast issues in popups and improved the overall aesthetic.
+        *   Refactored the CSS by removing all styles from `index.html` and consolidating them into `index.css`, improving maintainability.
+        *   Corrected the `dev` script in `package.json` to use `concurrently`, allowing both the frontend and backend to run simultaneously with a single command as intended.
+    *   **Code Review Findings & Recommendations:**
+        *   **State Management:** `App.tsx` is becoming complex. For future scalability, consider adopting a state management library (e.g., Redux Toolkit, Zustand) or React Context to better organize state.
+        *   **Error Handling:** The error handling in `services/policeApi.ts` is silent. It would be more user-friendly to display a notification to the user when API calls fail to fetch data.
+        *   **Accessibility:** The `Modal.tsx` component can be made more accessible by implementing focus trapping and allowing it to be closed with the "Escape" key.

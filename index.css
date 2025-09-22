@@ -3,35 +3,63 @@
 @tailwind utilities;
 
 :root {
-  --background: #121212;
-  --foreground: #E0E6ED;
-  --primary: #818cf8;
-  --primary-focus: #6366f1;
-  --secondary: #FFD700;
-  --muted: #4A5D6B;
-  --error: #FF6347;
-  --predictive-hotspot: #FF4500;
-  --accent-primary: #FFD700;
-  --text-light: #E0E6ED;
-  --border-color: #4A5D6B;
-  --accent-secondary: #E0B900;
+  --background: #24273a;
+  --foreground: #cad3f5;
+  --primary: #c6a0f6;
+  --primary-focus: #b7bdf8;
+  --secondary: #eed49f;
+  --muted: #363a4f;
+  --error: #ed8796;
+  --predictive-hotspot: #f5a97f;
+  --accent-primary: #eed49f;
+  --text-light: #cad3f5;
+  --border-color: #494d64;
+  --accent-secondary: #8bd5ca;
+}
+
+[data-theme='light'] {
+  --background: #eff1f5;
+  --foreground: #4c4f69;
+  --primary: #8839ef;
+  --primary-focus: #7287fd;
+  --secondary: #df8e1d;
+  --muted: #ccd0da;
+  --error: #d20f39;
+  --predictive-hotspot: #fe640b;
+  --accent-primary: #df8e1d;
+  --text-light: #4c4f69;
+  --border-color: #bcc0cc;
+  --accent-secondary: #179299;
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+#root {
+    padding: 0.15rem;
 }
 
 .table-row-highlighted {
-  background-color: rgba(255, 215, 0, 0.1);
+  background-color: rgba(238, 212, 159, 0.1);
+  box-shadow: inset 0 0 8px var(--accent-secondary);
+  color: var(--foreground);
+  font-weight: bold;
 }
 
 .active-glow {
-  box-shadow: 0 0 8px var(--accent-primary);
+  box-shadow: 0 0 8px 2px rgba(139, 213, 202, 0.6), inset 0 0 5px rgba(139, 213, 202, 0.4);
+  border-color: var(--accent-secondary);
 }
 
 .predictive-generating {
-  animation: pulse-predictive 1.5s infinite alternate;
+  animation: pulse 1.2s infinite ease-in-out;
+}
+
+.insights-generating {
+    animation: pulse 1.2s infinite ease-in-out;
 }
 
 .loading-spinner {
@@ -48,3 +76,110 @@ body {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+@keyframes flash-red-amber {
+    0% { border-color: var(--error); box-shadow: 0 0 5px var(--error); }
+    50% { border-color: #f59e0b; box-shadow: 0 0 8px #f59e0b; } /* amber-500 */
+    100% { border-color: var(--error); box-shadow: 0 0 5px var(--error); }
+}
+
+.burglary-flash {
+    animation: flash-red-amber 1.8s infinite alternate;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.9; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes pulse-predictive {
+    0% { transform: scale(1); opacity: 1; box-shadow: 0 0 5px var(--predictive-hotspot); }
+    50% { transform: scale(1.1); opacity: 0.8; box-shadow: 0 0 12px var(--predictive-hotspot); }
+    100% { transform: scale(1); opacity: 1; box-shadow: 0 0 5px var(--predictive-hotspot); }
+}
+
+/* Leaflet Overrides */
+.leaflet-tile-pane {
+    filter: grayscale(20%) contrast(90%) brightness(95%);
+}
+
+.leaflet-popup-content-wrapper {
+  background-color: var(--background);
+  color: var(--foreground);
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  border: 1px solid var(--border-color);
+  padding: 0.5rem;
+  line-height: 1.1;
+}
+
+.leaflet-popup-content {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.leaflet-popup-content h3 {
+  color: var(--primary);
+  font-size: 1.1em;
+  margin-bottom: 5px;
+}
+
+.leaflet-popup-content strong {
+  color: var(--primary-focus);
+}
+
+.leaflet-popup-tip {
+  background-color: var(--background);
+}
+
+.leaflet-popup-close-button {
+    color: var(--error);
+    font-size: 1.2rem;
+    right: 0.2rem;
+    top: 0.2rem;
+    text-shadow: none;
+}
+
+.crime-marker-popup .briefing-content {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+  color: var(--foreground);
+  max-height: 150px;
+  overflow-y: auto;
+  padding-right: 5px;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.crime-marker-popup .briefing-content .text-red-400 {
+  color: var(--error);
+}
+
+.crime-marker-popup .loading-spinner {
+  border-top-color: var(--primary);
+}
+
+.marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
+    background-color: var(--primary);
+    color: var(--background);
+    font-weight: bold;
+    text-shadow: none;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+.marker-cluster-small span, .marker-cluster-medium span, .marker-cluster-large span {
+    line-height: normal;
+}
+.marker-cluster-small { background-color: rgba(198, 160, 246, 0.7); } /* primary with alpha */
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--background); border-radius: 10px; border: 1px solid var(--border-color); }
+::-webkit-scrollbar-thumb { background: var(--accent-secondary); border-radius: 10px; border: 1px solid var(--background); }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-primary); }
