@@ -124,6 +124,11 @@ body {
 .leaflet-popup-content {
   font-size: 14px;
   line-height: 1.5;
+  color: var(--foreground);
+}
+
+[data-theme='dark'] .leaflet-popup-content {
+  color: #FFFFFF; /* Explicitly set to white for dark mode */
 }
 
 .leaflet-popup-content h3 {
