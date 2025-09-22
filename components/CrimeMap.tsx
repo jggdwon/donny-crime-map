@@ -99,6 +99,7 @@ interface CrimeMapProps {
   selectedStopSearch: StopSearch | null;
   allCrimes: Crime[];
   allStopSearches: StopSearch[];
+  closeModal: () => void; // Add closeModal prop
 }
 
 const CrimeMap: React.FC<CrimeMapProps> = ({
@@ -114,6 +115,7 @@ const CrimeMap: React.FC<CrimeMapProps> = ({
   selectedStopSearch,
   allCrimes,
   allStopSearches,
+  closeModal, // Destructure closeModal
 }) => {
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
@@ -149,6 +151,8 @@ const CrimeMap: React.FC<CrimeMapProps> = ({
     mapRef.current = map;
     
     map.on('click', () => {
+        map.closePopup(); // Close any open Leaflet popups
+        closeModal(); // Close any open Modals
         onCrimeSelect(null); // Deselect when clicking the map background
     });
 
@@ -174,7 +178,7 @@ const CrimeMap: React.FC<CrimeMapProps> = ({
         map.remove();
         mapRef.current = null;
     };
-  }, [onCrimeSelect]);
+  }, [onCrimeSelect, closeModal]); // Add closeModal to dependency array
 
   // Update crime markers
   useEffect(() => {
